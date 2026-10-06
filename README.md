@@ -44,6 +44,8 @@ cd api
 uv venv
 source .venv/bin/activate     # PowerShell: .venv\Scripts\Activate.ps1
 uv pip install -r requirements.txt
+alembic upgrade head          # stvara tablice
+python -m app.seed            # početni podatci
 uvicorn app.main:app --reload
 ```
 
@@ -51,6 +53,49 @@ Provjera:
 
 - http://127.0.0.1:8000/health vraća `{"status": "ok"}`
 - http://127.0.0.1:8000/docs prikazuje Swagger UI s popisom ruta
+
+## Baza podataka
+
+Shema baze mijenja se isključivo migracijama, koje stoje u
+`api/alembic/versions/`.
+
+```bash
+cd api
+
+# nova migracija iz razlike između modela i baze
+alembic revision --autogenerate --rev-id 002 -m "opis promjene"
+
+alembic upgrade head      # primijeni sve što još nije primijenjeno
+alembic downgrade -1      # poništi zadnju migraciju
+alembic current           # na kojoj je migraciji baza
+```
+
+Svaka nastala migracija čita se **prije** pokretanja: preimenovanje stupca
+`autogenerate` vidi kao `drop_column` + `add_column`, što briše podatke. Ispravak
+je `op.alter_column(..., new_column_name=...)`.
+
+### Početni podatci
+
+`python -m app.seed` stvara organizatora, demo klub i račun kluba. Smije se
+pokrenuti više puta; što već postoji, ne stvara se ponovno.
+
+| Uloga | Prijava | Lozinka |
+|-------|---------|---------|
+| admin | `admin@plreg.hr` | `admin123` |
+| club (PLK Behemot) | `behemot@plreg.hr` | `behemot123` |
+
+### Prazna baza
+
+```bash
+docker compose down -v        # briše kontejner i volumen s podatcima
+docker compose up -d db
+cd api
+alembic upgrade head
+python -m app.seed
+```
+
+Isto vrijedi pri prelasku na raniji commit ili tag predavanja: baza može biti
+na migraciji koju stariji kod ne poznaje.
 
 ## Kvaliteta koda
 

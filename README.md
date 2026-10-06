@@ -120,6 +120,78 @@ ruff format .     # jedinstven stil
 ruff check .      # pogreške vidljive iz koda
 ```
 
+## API
+
+Svi popisi primaju `limit` i `offset`. Zadano je 20 zapisa od početka popisa,
+a `limit` smije biti najviše 100.
+
+### Autentikacija
+
+| Metoda | Putanja | Opis | Pristup |
+|--------|---------|------|---------|
+| POST | `/auth/login` | prijava, vraća access i refresh token | javno |
+| POST | `/auth/refresh` | novi par tokena | refresh token |
+| GET | `/auth/me` | trenutni korisnik | prijavljen |
+
+Access token vrijedi 15 minuta, refresh token 7 dana. Access token šalje se u
+zaglavlju `Authorization: Bearer <token>`.
+
+### Klubovi
+
+| Metoda | Putanja | Opis | Pristup |
+|--------|---------|------|---------|
+| GET | `/clubs/` | popis klubova | admin: svi, klub: samo svoj |
+| POST | `/clubs/` | novi klub i njegov račun | admin |
+| GET | `/clubs/{club_id}` | jedan klub | admin, vlastiti klub |
+| PATCH | `/clubs/{club_id}` | izmjena kluba | admin |
+| POST | `/clubs/{club_id}/reset-password` | nova lozinka računa kluba | admin |
+
+### Natjecatelji
+
+| Metoda | Putanja | Opis | Pristup |
+|--------|---------|------|---------|
+| GET | `/clubs/{club_id}/lifters/` | popis, filtar `gender` | admin, vlastiti klub |
+| POST | `/clubs/{club_id}/lifters/` | novi natjecatelj | admin, vlastiti klub |
+| GET | `/clubs/{club_id}/lifters/{id}` | jedan natjecatelj | admin, vlastiti klub |
+| PATCH | `/clubs/{club_id}/lifters/{id}` | izmjena | admin, vlastiti klub |
+| DELETE | `/clubs/{club_id}/lifters/{id}` | brisanje, samo ako nema prijava | admin, vlastiti klub |
+
+### Natjecanja
+
+| Metoda | Putanja | Opis | Pristup |
+|--------|---------|------|---------|
+| GET | `/competitions/` | popis, s izračunatom fazom | prijavljen |
+| POST | `/competitions/` | novo natjecanje | admin |
+| GET | `/competitions/{id}` | jedno natjecanje | prijavljen |
+| PATCH | `/competitions/{id}` | izmjena | admin |
+
+### Prijave
+
+| Metoda | Putanja | Opis | Pristup |
+|--------|---------|------|---------|
+| GET | `/competitions/{id}/registrations/` | popis, filtar `status` | admin: sve, klub: svoje |
+| POST | `/competitions/{id}/registrations/` | nova prijava | vlasnik natjecatelja, `OPEN` |
+| GET | `/competitions/{id}/registrations/{rid}` | jedna prijava | vlasnik |
+| PATCH | `/competitions/{id}/registrations/{rid}` | kategorija, total | vlasnik, `OPEN`/`PRELIM_PASSED` |
+| POST | `/competitions/{id}/registrations/{rid}/withdraw` | odjava | vlasnik, `OPEN`/`PRELIM_PASSED` |
+| POST | `/competitions/{id}/registrations/{rid}/reactivate` | povratak odjavljene | vlasnik, `OPEN`/`PRELIM_PASSED` |
+
+## Faze natjecanja
+
+Faza se ne pohranjuje nego računa pri svakom zahtjevu iz dvaju rokova, u
+`app/core/phases.py`.
+
+| Radnja | `OPEN` | `PRELIM_PASSED` | `CLOSED` |
+|--------|:------:|:---------------:|:--------:|
+| nova prijava | da | ne | ne |
+| promjena kategorije | da | da | ne |
+| odjava i povratak | da | da | ne |
+| čitanje popisa | da | da | da |
+
+`OPEN` traje do preliminarnog roka, `PRELIM_PASSED` do finalnog, a `CLOSED`
+nakon njega. Težinske kategorije IPF-a: muškarci 59, 66, 74, 83, 93, 105, 120,
+120+; žene 47, 52, 57, 63, 69, 76, 84, 84+.
+
 ## Pogreške
 
 Svaki neuspjeh vraća tijelo istoga oblika:
@@ -131,6 +203,43 @@ Svaki neuspjeh vraća tijelo istoga oblika:
 `code` je stalan i namijenjen kodu klijenta, `message` je namijenjen čovjeku.
 Pogreška u obliku podataka, sa statusom 422, uz to nosi polje `errors` s
 popisom polja koja nisu prošla provjeru.
+
+| `code` | HTTP | Kada |
+|--------|------|------|
+| `validation_error` | 422 | tijelo ili parametri ne odgovaraju shemi |
+| `invalid_credentials` | 401 | prijava ili token ne vrijede |
+| `token_expired` | 401 | access token je istekao |
+| `forbidden` | 403 | uloga ili vlasništvo ne dopuštaju radnju |
+| `not_found` | 404 | zapis ne postoji |
+| `duplicate` | 409 | zapis bi prekršio jedinstvenost |
+| `has_registrations` | 409 | natjecatelj s prijavama ne može se obrisati |
+| `deadline_passed` | 400 | radnja nije moguća u ovoj fazi |
+| `already_withdrawn` | 400 | prijava je već povučena |
+| `already_active` | 400 | prijava je već aktivna |
+| `invalid_category` | 400 | kategorija ne odgovara spolu natjecatelja |
+| `invalid_deadlines` | 400 | izmjena bi poremetila poredak rokova |
+
+## Tagovi predavanja
+
+Stanje projekta na kraju svakog predavanja označeno je tagom:
+
+| Tag | Predavanje |
+|-----|------------|
+| `predavanje-01` | Arhitektura backenda i kostur projekta |
+| `predavanje-02` | Modeliranje podataka, ORM i migracije |
+| `predavanje-03` | Autentikacija i sigurnost |
+| `predavanje-04` | Autorizacija i vlasništvo nad zapisom |
+| `predavanje-05` | Oblikovanje API-ja i CRUD domene |
+| `predavanje-06` | Poslovna pravila i rokovi |
+
+```bash
+git log --oneline predavanje-02..predavanje-03    # commitovi jednog predavanja
+git diff predavanje-02 predavanje-03              # sve promjene jednog predavanja
+git checkout predavanje-03                        # projekt na kraju 3. predavanja
+```
+
+Nakon prelaska na drugi tag bazu treba vratiti u prazno stanje, kako je opisano
+pod *Prazna baza*, i ponovno instalirati zavisnosti.
 
 ## Commitovi
 

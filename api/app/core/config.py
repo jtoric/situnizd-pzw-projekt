@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     ENV: str = "dev"
     DATABASE_URL: str
     JWT_SECRET: str = "change-me"
+    JWT_ISSUER: str = "sit-unizd"
 
     # Varijabla okoline ima prednost pred vrijednošću iz .env datoteke
     model_config = SettingsConfigDict(env_file=ENV_FILE, extra="ignore")

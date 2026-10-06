@@ -15,6 +15,7 @@ from app.routers.clubs import router as clubs_router
 from app.routers.competitions import router as competitions_router
 from app.routers.health import router as health_router
 from app.routers.lifters import router as lifters_router
+from app.routers.registrations import router as registrations_router
 
 
 def create_app(config: Settings = settings) -> FastAPI:
@@ -33,6 +34,11 @@ def create_app(config: Settings = settings) -> FastAPI:
     )
     app.include_router(
         competitions_router, prefix="/competitions", tags=["competitions"]
+    )
+    app.include_router(
+        registrations_router,
+        prefix="/competitions/{comp_id}/registrations",
+        tags=["registrations"],
     )
     return app
 

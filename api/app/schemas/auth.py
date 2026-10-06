@@ -12,6 +12,9 @@ def _bcrypt_limit(value: str) -> str:
 
 Password = Annotated[str, Field(min_length=1), AfterValidator(_bcrypt_limit)]
 
+# Lozinka koja se tek postavlja: uz isto ograničenje traži i najmanju duljinu
+NewPassword = Annotated[str, Field(min_length=8), AfterValidator(_bcrypt_limit)]
+
 
 class LoginRequest(BaseModel):
     username: str = Field(min_length=1, max_length=255)

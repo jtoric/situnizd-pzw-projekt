@@ -11,6 +11,7 @@ from app.core.errors import (
 )
 from app.core.logging import setup_logging
 from app.routers.auth import router as auth_router
+from app.routers.clubs import router as clubs_router
 from app.routers.health import router as health_router
 
 
@@ -24,6 +25,7 @@ def create_app(config: Settings = settings) -> FastAPI:
 
     app.include_router(health_router, prefix="/health", tags=["health"])
     app.include_router(auth_router, prefix="/auth", tags=["auth"])
+    app.include_router(clubs_router, prefix="/clubs", tags=["clubs"])
     return app
 
 

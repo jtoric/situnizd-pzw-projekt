@@ -5,9 +5,10 @@ uvicorn[standard]>=0.34
 # Konfiguracija iz varijabli okoline
 pydantic-settings>=2.7
 
-# Baza: ORM i asinkroni upravljački program za PostgreSQL
+# Baza: ORM, asinkroni upravljački program za PostgreSQL i migracije
 sqlalchemy[asyncio]>=2.0
 asyncpg>=0.30
+alembic>=1.14
 
 # Statička analiza i formatiranje
 ruff>=0.9

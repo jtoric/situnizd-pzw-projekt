@@ -193,3 +193,80 @@ async def test_club_cannot_patch_other_club_registration(
         url(competition, reg.id), json={"category": "69"}, headers=headers
     )
     assert resp.status_code == 403
+
+
+# --- faze: nova prijava samo u OPEN, izmjena i u PRELIM_PASSED --------------------
+
+
+@freeze_time("2026-04-01 10:00:00")
+async def test_create_registration_open(client, lifter, competition):
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.post(
+        url(competition),
+        json={"lifter_id": lifter.id, "category": "83", "total": 500},
+        headers=headers,
+    )
+    assert resp.status_code == 201
+
+
+@freeze_time("2026-04-20 10:00:00")
+async def test_create_registration_prelim_passed(client, lifter, competition):
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.post(
+        url(competition),
+        json={"lifter_id": lifter.id, "category": "83", "total": 500},
+        headers=headers,
+    )
+    assert resp.status_code == 400
+    # Kod pogreške potvrđuje da je razlog odbijanja rok, a ne nešto drugo
+    assert resp.json()["code"] == "deadline_passed"
+
+
+@freeze_time("2026-05-02 10:00:00")
+async def test_create_registration_closed(client, lifter, competition):
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.post(
+        url(competition),
+        json={"lifter_id": lifter.id, "category": "83", "total": 500},
+        headers=headers,
+    )
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "deadline_passed"
+
+
+@freeze_time("2026-04-20 10:00:00")
+async def test_update_category_prelim_passed(client, db, lifter, competition):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.patch(
+        url(competition, reg.id), json={"category": "93"}, headers=headers
+    )
+    assert resp.status_code == 200
+    assert resp.json()["category"] == "93"
+
+
+@freeze_time("2026-05-02 10:00:00")
+async def test_update_category_closed(client, db, lifter, competition):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.patch(
+        url(competition, reg.id), json={"category": "93"}, headers=headers
+    )
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "deadline_passed"
+
+
+@freeze_time("2026-05-02 10:00:00")
+async def test_list_registrations_allowed_when_closed(client, db, lifter, competition):
+    await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.get(url(competition), headers=headers)
+    assert resp.status_code == 200
+    assert len(resp.json()) == 1
+
+
+@freeze_time("2026-04-20 10:00:00")
+async def test_competition_response_carries_phase(client, club_and_user, competition):
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.get(f"/competitions/{competition.id}", headers=headers)
+    assert resp.json()["phase"] == "prelim_passed"

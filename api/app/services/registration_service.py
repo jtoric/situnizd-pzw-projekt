@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
+from app.core.phases import Phase, get_competition_phase
 from app.models.lifter import Lifter
 from app.models.registration import Registration
 from app.models.user import User
@@ -66,7 +67,12 @@ async def get_registration(
 async def create_registration(
     db: AsyncSession, comp_id: int, body: RegistrationCreate, current_user: User
 ) -> Registration:
-    await get_competition_or_404(db, comp_id)
+    comp = await get_competition_or_404(db, comp_id)
+    # Pravilo roka prije svega ostaloga: zahtjev koji ne prolazi ne pokreće
+    # ni dohvat natjecatelja ni provjeru vlasništva.
+    # "!= OPEN", a ne nabrajanje faza: nova faza ne bi tiho dopustila prijavu
+    if get_competition_phase(comp) != Phase.OPEN:
+        raise AppError("deadline_passed", "Rok za nove prijave je istekao", 400)
 
     lifter = await lifter_repo.get_by_id(db, body.lifter_id)
     if not lifter:
@@ -91,7 +97,15 @@ async def update_registration(
     body: RegistrationUpdate,
     current_user: User,
 ) -> Registration:
-    reg = await get_registration(db, comp_id, reg_id, current_user)
+    comp = await get_competition_or_404(db, comp_id)
+    # Izmjena je dopuštena i nakon nominacijskog roka, pa se odbija samo CLOSED
+    if get_competition_phase(comp) == Phase.CLOSED:
+        raise AppError(
+            "deadline_passed", "Izmjene nisu moguće nakon finalnog roka", 400
+        )
+
+    reg = await _get_registration_or_404(db, comp_id, reg_id)
+    _check_lifter_ownership(reg.lifter, current_user)
     changes = body.model_dump(exclude_unset=True)
     if "category" in changes:
         _check_category(reg.lifter, changes["category"])

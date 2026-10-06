@@ -173,3 +173,20 @@ async def test_get_missing_club_is_404(client, admin_user):
 async def test_list_clubs_without_token_is_401(client):
     resp = await client.get("/clubs/")
     assert resp.status_code == 401
+
+
+async def test_patch_club_explicit_null_is_422(client, admin_user, club_and_user):
+    club, _ = club_and_user
+    headers = await auth_header(client, "testadmin", "admin123")
+    resp = await client.patch(f"/clubs/{club.id}", json={"name": None}, headers=headers)
+    assert resp.status_code == 422
+
+
+async def test_list_clubs_pagination(
+    client, admin_user, club_and_user, club_b_and_user
+):
+    headers = await auth_header(client, "testadmin", "admin123")
+    resp = await client.get(
+        "/clubs/", params={"limit": 1, "offset": 1}, headers=headers
+    )
+    assert [c["name"] for c in resp.json()] == ["RivalClub"]

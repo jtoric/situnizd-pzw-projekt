@@ -8,6 +8,7 @@ Prije pokretanja: docker compose up -d db
 import asyncio
 import os
 from collections.abc import AsyncGenerator
+from datetime import date, datetime, timezone
 
 import bcrypt
 import pytest
@@ -19,7 +20,7 @@ from sqlalchemy.pool import NullPool
 from app.core.config import settings
 from app.core.deps import get_db
 from app.main import create_app
-from app.models import Base, Club, User
+from app.models import Base, Club, Competition, Lifter, Registration, User
 
 
 def _test_database_url() -> str:
@@ -151,6 +152,68 @@ async def club_b_and_user(db: AsyncSession) -> tuple[Club, User]:
     db.add(user)
     await db.commit()
     return club, user
+
+
+@pytest.fixture
+async def lifter(db: AsyncSession, club_and_user) -> Lifter:
+    """Natjecatelj kluba TestClub."""
+    club, _ = club_and_user
+    lifter = Lifter(
+        club_id=club.id,
+        first_name="Marko",
+        last_name="Markić",
+        birth_date=date(2000, 1, 15),
+        gender="M",
+    )
+    db.add(lifter)
+    await db.commit()
+    return lifter
+
+
+@pytest.fixture
+async def rival_lifter(db: AsyncSession, club_b_and_user) -> Lifter:
+    """Natjecateljica kluba RivalClub."""
+    club, _ = club_b_and_user
+    lifter = Lifter(
+        club_id=club.id,
+        first_name="Iva",
+        last_name="Ivić",
+        birth_date=date(1999, 3, 3),
+        gender="F",
+    )
+    db.add(lifter)
+    await db.commit()
+    return lifter
+
+
+@pytest.fixture
+async def competition(db: AsyncSession) -> Competition:
+    """Natjecanje sa stalnim rokovima: 15.04.2026. i 01.05.2026."""
+    competition = Competition(
+        name="Test Kup",
+        location="Zadar",
+        date=date(2026, 5, 16),
+        prelim_deadline=datetime(2026, 4, 15, tzinfo=timezone.utc),
+        final_deadline=datetime(2026, 5, 1, tzinfo=timezone.utc),
+    )
+    db.add(competition)
+    await db.commit()
+    return competition
+
+
+async def add_registration(
+    db: AsyncSession, lifter: Lifter, competition: Competition, category: str
+) -> Registration:
+    """Prijava upisana izravno u bazu, mimo API-ja."""
+    registration = Registration(
+        lifter_id=lifter.id,
+        competition_id=competition.id,
+        category=category,
+        total=500,
+    )
+    db.add(registration)
+    await db.commit()
+    return registration
 
 
 @pytest.fixture

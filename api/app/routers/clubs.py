@@ -9,6 +9,23 @@ from app.services import club_service
 router = APIRouter()
 
 
+@router.get("/", response_model=list[ClubResponse])
+async def list_clubs(
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role("admin", "club")),
+):
+    return await club_service.list_clubs(db, user)
+
+
+@router.get("/{club_id}", response_model=ClubResponse)
+async def get_club(
+    club_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role("admin", "club")),
+):
+    return await club_service.get_club(db, club_id, user)
+
+
 @router.post("/", response_model=ClubResponse, status_code=201)
 async def create_club(
     body: ClubCreate,

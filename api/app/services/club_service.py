@@ -20,6 +20,27 @@ async def _get_or_404(db: AsyncSession, club_id: int) -> Club:
     return club
 
 
+def ensure_club_access(current_user: User, club_id: int) -> None:
+    """Vlasništvo: račun kluba smije samo do svojega kluba; organizator do svih."""
+    if current_user.role == "club" and current_user.club_id != club_id:
+        raise AppError("forbidden", "Nemate pristup podatcima drugoga kluba", 403)
+
+
+async def get_club(db: AsyncSession, club_id: int, current_user: User) -> Club:
+    # Prvo postoji li zapis, tek onda smije li ga pošiljatelj vidjeti
+    club = await _get_or_404(db, club_id)
+    ensure_club_access(current_user, club_id)
+    return club
+
+
+async def list_clubs(db: AsyncSession, current_user: User) -> list[Club]:
+    # Popis ne imenuje nijedan zapis, pa se ne odbija nego sužava
+    if current_user.role == "admin":
+        return await club_repo.get_all(db)
+    club = await club_repo.get_by_id(db, current_user.club_id)
+    return [club] if club else []
+
+
 async def create_club(db: AsyncSession, body: ClubCreate) -> Club:
     # Provjera unaprijed daje jasnu poruku za uobičajen slučaj
     if await club_repo.get_by_name(db, body.name):

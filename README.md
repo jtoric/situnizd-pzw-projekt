@@ -76,13 +76,14 @@ je `op.alter_column(..., new_column_name=...)`.
 
 ### Početni podatci
 
-`python -m app.seed` stvara organizatora, demo klub i račun kluba. Smije se
+`python -m app.seed` stvara organizatora te dva kluba s njihovim računima. Smije se
 pokrenuti više puta; što već postoji, ne stvara se ponovno.
 
 | Uloga | Prijava | Lozinka |
 |-------|---------|---------|
 | admin | `admin@plreg.hr` | `admin123` |
 | club (PLK Behemot) | `behemot@plreg.hr` | `behemot123` |
+| club (PK Sokol) | `sokol@plreg.hr` | `sokol123` |
 
 ### Prazna baza
 

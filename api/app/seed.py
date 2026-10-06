@@ -18,10 +18,12 @@ from app.models import Club, User
 ADMIN_USERNAME = "admin@plreg.hr"
 ADMIN_PASSWORD = "admin123"
 
-DEMO_CLUB_NAME = "PLK Behemot"
-DEMO_CLUB_CITY = "Zadar"
-DEMO_CLUB_USERNAME = "behemot@plreg.hr"
-DEMO_CLUB_PASSWORD = "behemot123"
+# Dva kluba, da se vlasništvo može isprobati: klub A ne smije do podataka kluba B
+# Polja: naziv, grad, korisničko ime, lozinka
+DEMO_CLUBS = [
+    ("PLK Behemot", "Zadar", "behemot@plreg.hr", "behemot123"),
+    ("PK Sokol", "Split", "sokol@plreg.hr", "sokol123"),
+]
 
 
 async def get_or_create_user(
@@ -56,15 +58,15 @@ async def seed() -> None:
     # Jedna transakcija: ili su svi retci upisani, ili nijedan
     async with AsyncSessionLocal() as session, session.begin():
         await get_or_create_user(session, ADMIN_USERNAME, ADMIN_PASSWORD, "admin", None)
-        club = await get_or_create_club(session, DEMO_CLUB_NAME, DEMO_CLUB_CITY)
-        await get_or_create_user(
-            session, DEMO_CLUB_USERNAME, DEMO_CLUB_PASSWORD, "club", club.id
-        )
+        for name, city, username, password in DEMO_CLUBS:
+            club = await get_or_create_club(session, name, city)
+            await get_or_create_user(session, username, password, "club", club.id)
 
     await engine.dispose()
     print("Seed gotov.")
     print(f"  organizator: {ADMIN_USERNAME} / {ADMIN_PASSWORD}")
-    print(f"  klub:        {DEMO_CLUB_USERNAME} / {DEMO_CLUB_PASSWORD}")
+    for name, _, username, password in DEMO_CLUBS:
+        print(f"  {name}: {username} / {password}")
 
 
 if __name__ == "__main__":

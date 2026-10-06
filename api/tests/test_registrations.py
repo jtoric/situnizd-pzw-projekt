@@ -270,3 +270,125 @@ async def test_competition_response_carries_phase(client, club_and_user, competi
     headers = await auth_header(client, "testclub", "klub123")
     resp = await client.get(f"/competitions/{competition.id}", headers=headers)
     assert resp.json()["phase"] == "prelim_passed"
+
+
+# --- odjava, ponovna prijava, dvostruka prijava ------------------------------------
+
+
+async def test_withdraw_keeps_registration_with_new_status(
+    client, db, lifter, competition
+):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.post(f"{url(competition, reg.id)}/withdraw", headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "withdrawn"
+    # Zapis nije obrisan: i dalje je na popisu, s novim stanjem
+    listed = await client.get(
+        url(competition), params={"status": "withdrawn"}, headers=headers
+    )
+    assert [r["id"] for r in listed.json()] == [reg.id]
+
+
+async def test_withdraw_twice_is_rejected(client, db, lifter, competition):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    await client.post(f"{url(competition, reg.id)}/withdraw", headers=headers)
+    resp = await client.post(f"{url(competition, reg.id)}/withdraw", headers=headers)
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "already_withdrawn"
+
+
+@freeze_time("2026-04-20 10:00:00")
+async def test_withdraw_allowed_in_prelim_passed(client, db, lifter, competition):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.post(f"{url(competition, reg.id)}/withdraw", headers=headers)
+    assert resp.status_code == 200
+
+
+@freeze_time("2026-05-02 10:00:00")
+async def test_withdraw_rejected_when_closed(client, db, lifter, competition):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.post(f"{url(competition, reg.id)}/withdraw", headers=headers)
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "deadline_passed"
+
+
+async def test_club_cannot_withdraw_other_club_registration(
+    client, db, lifter, rival_lifter, competition
+):
+    reg = await add_registration(db, rival_lifter, competition, "63")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.post(f"{url(competition, reg.id)}/withdraw", headers=headers)
+    assert resp.status_code == 403
+
+
+async def test_admin_withdraws_any_registration(
+    client, db, admin_user, rival_lifter, competition
+):
+    reg = await add_registration(db, rival_lifter, competition, "63")
+    headers = await auth_header(client, "testadmin", "admin123")
+    resp = await client.post(f"{url(competition, reg.id)}/withdraw", headers=headers)
+    assert resp.status_code == 200
+
+
+async def test_reactivate_withdrawn_registration(client, db, lifter, competition):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    await client.post(f"{url(competition, reg.id)}/withdraw", headers=headers)
+    resp = await client.post(f"{url(competition, reg.id)}/reactivate", headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "active"
+
+
+async def test_reactivate_active_registration_is_rejected(
+    client, db, lifter, competition
+):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.post(f"{url(competition, reg.id)}/reactivate", headers=headers)
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "already_active"
+
+
+async def test_reactivate_rejected_when_closed(client, db, lifter, competition):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    await client.post(f"{url(competition, reg.id)}/withdraw", headers=headers)
+    with freeze_time("2026-05-02 10:00:00"):
+        # Nova prijava: token od 01.04. dotad je odavno istekao
+        headers = await auth_header(client, "testclub", "klub123")
+        resp = await client.post(
+            f"{url(competition, reg.id)}/reactivate", headers=headers
+        )
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "deadline_passed"
+
+
+async def test_duplicate_registration_is_409(client, db, lifter, competition):
+    await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.post(
+        url(competition),
+        json={"lifter_id": lifter.id, "category": "93"},
+        headers=headers,
+    )
+    assert resp.status_code == 409
+    assert resp.json()["code"] == "duplicate"
+
+
+async def test_registration_after_withdrawal_is_still_duplicate(
+    client, db, lifter, competition
+):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    await client.post(f"{url(competition, reg.id)}/withdraw", headers=headers)
+    # Redak je ostao, pa ga UNIQUE i dalje vidi; povratak ide kroz /reactivate
+    resp = await client.post(
+        url(competition),
+        json={"lifter_id": lifter.id, "category": "83"},
+        headers=headers,
+    )
+    assert resp.status_code == 409

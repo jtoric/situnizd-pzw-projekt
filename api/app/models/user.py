@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import CheckConstraint, ForeignKey, String
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, String, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -17,9 +17,13 @@ class User(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    username: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False)
+    # Deaktiviran račun ne prolazi prijavu ni provjeru tokena
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true()
+    )
 
     # admin ne pripada nijednom klubu, pa je club_id NULL
     club_id: Mapped[Optional[int]] = mapped_column(

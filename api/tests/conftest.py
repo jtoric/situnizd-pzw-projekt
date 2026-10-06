@@ -137,6 +137,23 @@ async def club_and_user(db: AsyncSession) -> tuple[Club, User]:
 
 
 @pytest.fixture
+async def club_b_and_user(db: AsyncSession) -> tuple[Club, User]:
+    """Drugi klub, za provjere vlasništva: rivalclub / rival123."""
+    club = Club(name="RivalClub", city="Split")
+    db.add(club)
+    await db.flush()
+    user = User(
+        username="rivalclub",
+        password_hash=fast_hash("rival123"),
+        role="club",
+        club_id=club.id,
+    )
+    db.add(user)
+    await db.commit()
+    return club, user
+
+
+@pytest.fixture
 async def inactive_user(db: AsyncSession) -> User:
     """Deaktiviran račun: inactive / pass123."""
     user = User(

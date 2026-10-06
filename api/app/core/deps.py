@@ -54,3 +54,17 @@ async def get_current_user(
     if not user or not user.is_active:
         raise AppError("invalid_credentials", "Neispravan token", 401)
     return user
+
+
+def require_role(*allowed_roles: str):
+    """Stvara ovisnost koja propušta samo navedene uloge.
+
+    Uloga se čita iz zapisa u bazi, a ne iz tokena, pa promjena vrijedi odmah.
+    """
+
+    def checker(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in allowed_roles:
+            raise AppError("forbidden", "Nemate dozvolu za ovu akciju", 403)
+        return current_user
+
+    return checker

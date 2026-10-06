@@ -13,8 +13,9 @@ async def get_by_name(db: AsyncSession, name: str) -> Club | None:
     return result.scalar_one_or_none()
 
 
-async def get_all(db: AsyncSession) -> list[Club]:
-    result = await db.execute(select(Club).order_by(Club.id))
+async def get_all(db: AsyncSession, limit: int, offset: int) -> list[Club]:
+    stmt = select(Club).order_by(Club.id).limit(limit).offset(offset)
+    result = await db.execute(stmt)
     return list(result.scalars().all())
 
 

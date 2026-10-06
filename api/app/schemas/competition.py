@@ -1,7 +1,15 @@
 import datetime as dt
 
-from pydantic import AwareDatetime, BaseModel, Field, field_validator, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    Field,
+    computed_field,
+    field_validator,
+    model_validator,
+)
 
+from app.core.phases import Phase, get_competition_phase
 from app.schemas.common import reject_null
 
 
@@ -50,3 +58,10 @@ class CompetitionResponse(BaseModel):
     final_deadline: dt.datetime
 
     model_config = {"from_attributes": True}
+
+    # Izvedena vrijednost: frontend iz nje zna koje radnje ponuditi,
+    # a pravila svejedno provodi backend
+    @computed_field
+    @property
+    def phase(self) -> Phase:
+        return get_competition_phase(self)

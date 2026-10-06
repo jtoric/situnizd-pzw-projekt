@@ -1,0 +1,19 @@
+[project]
+name = "pl-reg-api"
+version = "0.1.0"
+description = "Prijave klubova na powerlifting natjecanja"
+requires-python = ">=3.11"
+
+# Zavisnosti su u requirements.txt; ovdje je samo konfiguracija alata.
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+# E/W: stil, F: pogreške vidljive iz koda, npr. neiskorišten uvoz ili krivi naziv,
+# I: redoslijed uvoza
+select = ["E", "W", "F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]

@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.auth import NewPassword
+from app.schemas.common import reject_null
 
 
 class ClubCreate(BaseModel):
@@ -15,6 +16,8 @@ class ClubCreate(BaseModel):
 class ClubUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     city: str | None = Field(default=None, min_length=1, max_length=80)
+
+    _not_null = field_validator("name", "city", mode="before")(reject_null)
 
 
 class ClubResponse(BaseModel):

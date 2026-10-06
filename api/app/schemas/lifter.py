@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.schemas.common import reject_null
+
 
 def _must_be_past(value: date | None) -> date | None:
     # Tip hvata pogrešan oblik, ali ne i besmislenu vrijednost
@@ -30,6 +32,10 @@ class LifterUpdate(BaseModel):
     last_name: str | None = Field(default=None, min_length=1, max_length=80)
     birth_date: date | None = None
     gender: Literal["M", "F"] | None = None
+
+    _not_null = field_validator(
+        "first_name", "last_name", "birth_date", "gender", mode="before"
+    )(reject_null)
 
     @field_validator("birth_date")
     @classmethod

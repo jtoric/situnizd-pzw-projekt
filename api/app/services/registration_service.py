@@ -1,3 +1,4 @@
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError
@@ -87,7 +88,15 @@ async def create_registration(
         category=body.category,
         total=body.total,
     )
-    return await registration_repo.create(db, reg)
+    # Dvostruku prijavu odbija baza: UNIQUE nad lifter_id i competition_id.
+    # Provjera prije upisa ne bi bila dovoljna: dva istodobna zahtjeva prošla bi
+    # oba. Bez ovog prevođenja klijent bi dobio 500.
+    try:
+        return await registration_repo.create(db, reg)
+    except IntegrityError:
+        raise AppError(
+            "duplicate", "Natjecatelj je već prijavljen na ovo natjecanje", 409
+        )
 
 
 async def update_registration(

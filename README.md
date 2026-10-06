@@ -76,8 +76,11 @@ je `op.alter_column(..., new_column_name=...)`.
 
 ### Početni podatci
 
-`python -m app.seed` stvara organizatora te dva kluba s njihovim računima. Smije se
-pokrenuti više puta; što već postoji, ne stvara se ponovno.
+`python -m app.seed` stvara organizatora, dva kluba s njihovim računima i
+natjecateljima te natjecanje *16. Državno prvenstvo za mlađe juniore, juniore i
+veterane u powerliftingu* 27.02.2027. u Zadru, s preliminarnim rokom 27.01. i
+finalnim 20.02. Smije se pokrenuti više puta; što već postoji, ne stvara se
+ponovno.
 
 | Uloga | Prijava | Lozinka |
 |-------|---------|---------|

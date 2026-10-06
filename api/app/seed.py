@@ -7,13 +7,14 @@ Smije se pokrenuti bilo koliko puta: što već postoji, ne stvara se ponovno.
 """
 
 import asyncio
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import AsyncSessionLocal, engine
 from app.core.security import hash_password
-from app.models import Club, User
+from app.models import Club, Competition, Lifter, User
 
 ADMIN_USERNAME = "admin@plreg.hr"
 ADMIN_PASSWORD = "admin123"
@@ -29,6 +30,31 @@ DEMO_CLUBS = [
         "nabildanimozak123",
     ),
 ]
+
+# Natjecatelji po klubu; polja: ime, prezime, datum rođenja, spol
+DEMO_LIFTERS = {
+    "PLK Behemot": [
+        ("Ana", "Horvat", date(2005, 5, 2), "F"),
+        ("Ivan", "Perić", date(2004, 11, 20), "M"),
+    ],
+    "PLK Nabildani Mozak": [
+        ("Marko", "Marić", date(2006, 1, 15), "M"),
+    ],
+}
+
+# Natjecanje iz kalendara HPLS-a, 27. i 28. 2. 2027.; date je prvi dan natjecanja.
+# HPLS rokove ne navodi: preliminarni je mjesec dana prije, finalni tjedan dana prije.
+# Rokovi su po srednjoeuropskom vremenu, UTC+1
+CET = timezone(timedelta(hours=1))
+DEMO_COMPETITION = {
+    "name": (
+        "16. Državno prvenstvo za mlađe juniore, juniore i veterane u powerliftingu"
+    ),
+    "location": "Sportski centar Ravnice, Zadar",
+    "date": date(2027, 2, 27),
+    "prelim_deadline": datetime(2027, 1, 27, 23, 59, tzinfo=CET),
+    "final_deadline": datetime(2027, 2, 20, 23, 59, tzinfo=CET),
+}
 
 
 async def get_or_create_user(
@@ -59,6 +85,47 @@ async def get_or_create_club(session: AsyncSession, name: str, city: str) -> Clu
     return club
 
 
+async def get_or_create_lifter(
+    session: AsyncSession,
+    club_id: int,
+    first_name: str,
+    last_name: str,
+    birth_date: date,
+    gender: str,
+) -> Lifter:
+    result = await session.execute(
+        select(Lifter).where(
+            Lifter.club_id == club_id,
+            Lifter.first_name == first_name,
+            Lifter.last_name == last_name,
+        )
+    )
+    lifter = result.scalar_one_or_none()
+    if lifter is None:
+        lifter = Lifter(
+            club_id=club_id,
+            first_name=first_name,
+            last_name=last_name,
+            birth_date=birth_date,
+            gender=gender,
+        )
+        session.add(lifter)
+        await session.flush()
+    return lifter
+
+
+async def get_or_create_competition(session: AsyncSession, data: dict) -> Competition:
+    result = await session.execute(
+        select(Competition).where(Competition.name == data["name"])
+    )
+    competition = result.scalar_one_or_none()
+    if competition is None:
+        competition = Competition(**data)
+        session.add(competition)
+        await session.flush()
+    return competition
+
+
 async def seed() -> None:
     # Jedna transakcija: ili su svi retci upisani, ili nijedan
     async with AsyncSessionLocal() as session, session.begin():
@@ -66,12 +133,16 @@ async def seed() -> None:
         for name, city, username, password in DEMO_CLUBS:
             club = await get_or_create_club(session, name, city)
             await get_or_create_user(session, username, password, "club", club.id)
+            for lifter in DEMO_LIFTERS[name]:
+                await get_or_create_lifter(session, club.id, *lifter)
+        await get_or_create_competition(session, DEMO_COMPETITION)
 
     await engine.dispose()
     print("Seed gotov.")
     print(f"  organizator: {ADMIN_USERNAME} / {ADMIN_PASSWORD}")
     for name, _, username, password in DEMO_CLUBS:
         print(f"  {name}: {username} / {password}")
+    print(f"  natjecanje: {DEMO_COMPETITION['name']} ({DEMO_COMPETITION['date']})")
 
 
 if __name__ == "__main__":

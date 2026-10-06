@@ -33,10 +33,12 @@ async def get_club(db: AsyncSession, club_id: int, current_user: User) -> Club:
     return club
 
 
-async def list_clubs(db: AsyncSession, current_user: User) -> list[Club]:
+async def list_clubs(
+    db: AsyncSession, current_user: User, limit: int, offset: int
+) -> list[Club]:
     # Popis ne imenuje nijedan zapis, pa se ne odbija nego sužava
     if current_user.role == "admin":
-        return await club_repo.get_all(db)
+        return await club_repo.get_all(db, limit, offset)
     club = await club_repo.get_by_id(db, current_user.club_id)
     return [club] if club else []
 

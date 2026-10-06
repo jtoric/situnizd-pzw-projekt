@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_db, require_role
@@ -13,8 +13,10 @@ router = APIRouter()
 async def list_clubs(
     db: AsyncSession = Depends(get_db),
     user: User = Depends(require_role("admin", "club")),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
 ):
-    return await club_service.list_clubs(db, user)
+    return await club_service.list_clubs(db, user, limit, offset)
 
 
 @router.get("/{club_id}", response_model=ClubResponse)

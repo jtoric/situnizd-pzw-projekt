@@ -1,4 +1,18 @@
+import pytest
+from freezegun import freeze_time
+
 from tests.conftest import add_registration, auth_header
+
+
+@pytest.fixture(autouse=True)
+def open_phase():
+    """Zadano vrijeme za testove u ovoj datoteci: prije nominacijskog roka.
+
+    Natjecanje iz fixturea ima rokove 15.04. i 01.05.2026.; bez zamrzavanja
+    ishod testa ovisio bi o danu pokretanja.
+    """
+    with freeze_time("2026-04-01 10:00:00"):
+        yield
 
 
 def url(competition, reg_id=None):

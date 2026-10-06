@@ -59,3 +59,24 @@ async def update_registration(
     return await registration_service.update_registration(
         db, comp_id, reg_id, body, user
     )
+
+
+# Odjava nije DELETE: adresa imenuje radnju jer je riječ o prijelazu stanja
+@router.post("/{reg_id}/withdraw", response_model=RegistrationResponse)
+async def withdraw_registration(
+    comp_id: int,
+    reg_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role("admin", "club")),
+):
+    return await registration_service.withdraw_registration(db, comp_id, reg_id, user)
+
+
+@router.post("/{reg_id}/reactivate", response_model=RegistrationResponse)
+async def reactivate_registration(
+    comp_id: int,
+    reg_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role("admin", "club")),
+):
+    return await registration_service.reactivate_registration(db, comp_id, reg_id, user)

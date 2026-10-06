@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +15,8 @@ from app.schemas.registration import (
     RegistrationUpdate,
 )
 from app.services.competition_service import get_competition_or_404
+
+logger = logging.getLogger(__name__)
 
 
 def _check_lifter_ownership(lifter: Lifter, current_user: User) -> None:
@@ -99,6 +103,21 @@ async def create_registration(
         )
 
 
+async def _get_registration_for_change(
+    db: AsyncSession, comp_id: int, reg_id: int, current_user: User
+) -> Registration:
+    """Zajednički put izmjene, odjave i ponovne prijave: rok, postojanje, vlasništvo."""
+    comp = await get_competition_or_404(db, comp_id)
+    # Dopušteno i nakon nominacijskog roka, pa se odbija samo CLOSED
+    if get_competition_phase(comp) == Phase.CLOSED:
+        raise AppError(
+            "deadline_passed", "Izmjene nisu moguće nakon finalnog roka", 400
+        )
+    reg = await _get_registration_or_404(db, comp_id, reg_id)
+    _check_lifter_ownership(reg.lifter, current_user)
+    return reg
+
+
 async def update_registration(
     db: AsyncSession,
     comp_id: int,
@@ -106,19 +125,38 @@ async def update_registration(
     body: RegistrationUpdate,
     current_user: User,
 ) -> Registration:
-    comp = await get_competition_or_404(db, comp_id)
-    # Izmjena je dopuštena i nakon nominacijskog roka, pa se odbija samo CLOSED
-    if get_competition_phase(comp) == Phase.CLOSED:
-        raise AppError(
-            "deadline_passed", "Izmjene nisu moguće nakon finalnog roka", 400
-        )
-
-    reg = await _get_registration_or_404(db, comp_id, reg_id)
-    _check_lifter_ownership(reg.lifter, current_user)
+    reg = await _get_registration_for_change(db, comp_id, reg_id, current_user)
     changes = body.model_dump(exclude_unset=True)
     if "category" in changes:
         _check_category(reg.lifter, changes["category"])
     for field, value in changes.items():
         setattr(reg, field, value)
     await db.flush()
+    return reg
+
+
+async def withdraw_registration(
+    db: AsyncSession, comp_id: int, reg_id: int, current_user: User
+) -> Registration:
+    """Odjava je prijelaz stanja, a ne brisanje: zapis i povijest ostaju."""
+    reg = await _get_registration_for_change(db, comp_id, reg_id, current_user)
+    # Ponovljeni zahtjev se odbija, pa sučelje zna da je odjava već provedena
+    if reg.status == "withdrawn":
+        raise AppError("already_withdrawn", "Prijava je već povučena", 400)
+    reg.status = "withdrawn"
+    await db.flush()
+    logger.info("registration withdrawn: id=%s", reg.id)
+    return reg
+
+
+async def reactivate_registration(
+    db: AsyncSession, comp_id: int, reg_id: int, current_user: User
+) -> Registration:
+    """Obrnuta radnja od odjave, dopuštena dok konačni rok nije prošao."""
+    reg = await _get_registration_for_change(db, comp_id, reg_id, current_user)
+    if reg.status == "active":
+        raise AppError("already_active", "Prijava je već aktivna", 400)
+    reg.status = "active"
+    await db.flush()
+    logger.info("registration reactivated: id=%s", reg.id)
     return reg

@@ -97,6 +97,18 @@ python -m app.seed
 Isto vrijedi pri prelasku na raniji commit ili tag predavanja: baza može biti
 na migraciji koju stariji kod ne poznaje.
 
+## Testovi
+
+```bash
+docker compose up -d db
+cd api
+pytest
+```
+
+Testovi rade nad zasebnom bazom `pl_reg_test` na istom poslužitelju; stvara se
+sama pri prvom pokretanju, a tablice se prazne prije svakog testa. Drugu bazu
+moguće je zadati varijablom `TEST_DATABASE_URL`.
+
 ## Kvaliteta koda
 
 ```bash

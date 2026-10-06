@@ -17,3 +17,10 @@ select = ["E", "W", "F", "I"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# async def testovi i fixtureovi rade bez posebne oznake
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

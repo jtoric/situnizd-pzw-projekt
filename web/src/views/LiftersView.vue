@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 
+import { ApiError } from '@/api/http'
+import { deleteLifter } from '@/api/lifters'
+import type { Lifter } from '@/api/types'
+import ConfirmDialog from '@/components/ConfirmDialog.vue'
 import { formatDate, GENDER_LABELS } from '@/lib/format'
+import { useAuthStore } from '@/stores/auth'
 import { useLiftersStore } from '@/stores/lifters'
+import { useNotificationsStore } from '@/stores/notifications'
 
+const auth = useAuthStore()
 const lifters = useLiftersStore()
+const notifications = useNotificationsStore()
 
 // Popis u pohrani prikazuje se odmah, a dohvat ga osvježava. Neuspjeh se prikazuje ovdje
 // (lifters.failed), pa se iznimka ne prosljeđuje globalnom rukovatelju kao druga poruka.
@@ -13,6 +21,25 @@ function load() {
 }
 
 onMounted(load)
+
+// Brisanje se ne može poništiti, pa prvi klik samo otvara potvrdu s imenom natjecatelja:
+// korisnik u tom trenutku gleda dijalog, a ne redak u kojem je kliknuo
+const toDelete = ref<Lifter | null>(null)
+
+async function confirmDelete() {
+  const lifter = toDelete.value
+  if (!lifter) return
+  toDelete.value = null
+  try {
+    await deleteLifter(auth.clubId!, lifter.id)
+    lifters.remove(lifter.id)
+    notifications.success(`Natjecatelj ${lifter.first_name} ${lifter.last_name} je obrisan.`)
+  } catch (e) {
+    // Natjecatelj s prijavama se ne briše; poruka poslužitelja kaže zašto
+    if (e instanceof ApiError && e.code === 'has_registrations') notifications.error(e.message)
+    else throw e
+  }
+}
 </script>
 
 <template>
@@ -56,10 +83,40 @@ onMounted(load)
               <RouterLink :to="{ name: 'lifter-edit', params: { lifterId: l.id } }">
                 Uredi<span class="sr-only"> natjecatelja {{ l.first_name }} {{ l.last_name }}</span>
               </RouterLink>
+              <button class="link-danger" type="button" @click="toDelete = l">
+                Obriši<span class="sr-only"> natjecatelja {{ l.first_name }} {{ l.last_name }}</span>
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
   </template>
+
+  <ConfirmDialog
+    :open="toDelete !== null"
+    title="Brisanje natjecatelja"
+    confirm-label="Obriši"
+    danger
+    @confirm="confirmDelete"
+    @cancel="toDelete = null"
+  >
+    <p>
+      Natjecatelj <strong>{{ toDelete?.first_name }} {{ toDelete?.last_name }}</strong> bit će
+      obrisan. Brisanje se ne može poništiti.
+    </p>
+  </ConfirmDialog>
 </template>
+
+<style scoped>
+.link-danger {
+  margin-left: 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--danger);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+</style>

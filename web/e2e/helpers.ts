@@ -27,12 +27,21 @@ export async function login(page: Page, account: Account) {
   await expect(page).toHaveURL(/\/natjecanja$/)
 }
 
+// Token po računu, jedan za sve testove istog radnog procesa. nginx ograničava broj prijava
+// u minuti (web/nginx.conf), a priprema podataka ne testira prijavu, pa se ne prijavljuje svaki put.
+// Token vrijedi 15 minuta, dulje od cijelog pokretanja testova.
+const tokens = new Map<string, string>()
+
 /** Klijent za pripremu podataka: šalje zahtjeve na /api s tokenom računa. */
 export async function apiAs(request: APIRequestContext, account: Account) {
-  const res = await request.post('/api/auth/login', { data: account })
-  expect(res.ok()).toBe(true)
-  const { access_token } = await res.json()
-  const headers = { Authorization: `Bearer ${access_token}` }
+  let token = tokens.get(account.username)
+  if (!token) {
+    const res = await request.post('/api/auth/login', { data: account })
+    expect(res.ok()).toBe(true)
+    token = (await res.json()).access_token as string
+    tokens.set(account.username, token)
+  }
+  const headers = { Authorization: `Bearer ${token}` }
 
   async function call(method: 'GET' | 'POST' | 'PATCH', path: string, data?: unknown) {
     const response = await request.fetch(`/api${path}`, { method, headers, data })

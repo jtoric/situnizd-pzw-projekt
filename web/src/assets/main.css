@@ -126,3 +126,25 @@ main:focus { outline: none; }
 @media (max-width: 600px) {
   .container { padding: 16px 12px 40px; }
 }
+
+/* ---------- Obrasci ---------- */
+.field { display: grid; gap: 4px; margin-bottom: 16px; }
+.field label { font-weight: 600; }
+input,
+select {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+/* Pogreška u obrascu: iznad gumba, za cijeli obrazac */
+.form-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}

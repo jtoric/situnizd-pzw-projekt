@@ -1,6 +1,9 @@
+from datetime import date, datetime, timezone
+
 import pytest
 from freezegun import freeze_time
 
+from app.models import Competition
 from tests.conftest import add_registration, auth_header
 
 
@@ -156,6 +159,35 @@ async def test_registration_under_wrong_competition_is_404(
         f"/competitions/9999/registrations/{reg.id}", headers=headers
     )
     assert resp.status_code == 404
+
+
+async def test_club_gets_own_registration(client, db, lifter, competition):
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.get(url(competition, reg.id), headers=headers)
+    assert resp.status_code == 200
+    assert resp.json()["id"] == reg.id
+
+
+async def test_registration_under_other_existing_competition_is_404(
+    client, db, lifter, competition
+):
+    # Prethodni test pada već na nepostojećem natjecanju; ovdje oba zapisa postoje,
+    # pa odbija tek provjera da prijava pripada natjecanju iz adrese
+    other = Competition(
+        name="Drugi kup",
+        location="Split",
+        date=date(2026, 6, 20),
+        prelim_deadline=datetime(2026, 5, 20, tzinfo=timezone.utc),
+        final_deadline=datetime(2026, 6, 5, tzinfo=timezone.utc),
+    )
+    db.add(other)
+    await db.commit()
+    reg = await add_registration(db, lifter, competition, "83")
+    headers = await auth_header(client, "testclub", "klub123")
+    resp = await client.get(url(other, reg.id), headers=headers)
+    assert resp.status_code == 404
+    assert resp.json()["code"] == "not_found"
 
 
 # --- izmjena --------------------------------------------------------------------

@@ -18,6 +18,25 @@ export function fetchRegistrations(
   return request('GET', `/competitions/${compId}/registrations/`, { query: { ...query } })
 }
 
+// Najveći limit koji poslužitelj prihvaća (le=100 u api/app/routers/registrations.py)
+const MAX_LIMIT = 100
+
+/**
+ * Sve prijave, dohvaćene stranicu po stranicu dok ne stigne kraća od najveće. Za izvoz, kojemu
+ * treba cijeli popis, a ne samo stranica prikazana na zaslonu.
+ */
+export async function fetchAllRegistrations(
+  compId: number,
+  status?: RegistrationStatus,
+): Promise<Registration[]> {
+  const all: Registration[] = []
+  for (let offset = 0; ; offset += MAX_LIMIT) {
+    const page = await fetchRegistrations(compId, { status, limit: MAX_LIMIT, offset })
+    all.push(...page)
+    if (page.length < MAX_LIMIT) return all
+  }
+}
+
 /** POST; ponovljena prijava istog natjecatelja daje ApiError 409 (code "duplicate"). */
 export function createRegistration(compId: number, input: RegistrationInput): Promise<Registration> {
   return request('POST', `/competitions/${compId}/registrations/`, { body: input })

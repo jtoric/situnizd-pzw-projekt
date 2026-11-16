@@ -22,7 +22,11 @@ const props = defineProps<{
   registeredLifterIds: number[]
 }>()
 
-const emit = defineEmits<{ created: [registration: Registration] }>()
+const emit = defineEmits<{
+  created: [registration: Registration]
+  /** rok je istekao dok je stranica bila otvorena, pa prikazano razdoblje nije najnovije */
+  stale: []
+}>()
 
 const lifters = useLiftersStore()
 onMounted(() => lifters.ensureLoaded().catch(() => {}))
@@ -72,7 +76,10 @@ async function submit() {
     if (!(e instanceof ApiError)) throw e
     if (e.code === 'validation_error') errors.value = toFieldErrors(e.fieldErrors)
     // Pravila natjecanja (rok, kategorija i spol, dvostruka prijava): poruka iznad gumba
-    else if (e.status === 400 || e.status === 409) formError.value = e.message
+    else if (e.status === 400 || e.status === 409) {
+      formError.value = e.message
+      if (e.code === 'deadline_passed') emit('stale')
+    }
     else throw e
   } finally {
     pending.value = false

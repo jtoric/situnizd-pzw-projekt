@@ -155,6 +155,14 @@ select[aria-invalid='true'] { border-color: var(--danger); border-width: 2px; }
   color: var(--danger);
 }
 
+/* Napomena uz radnju koja trenutno nije dopuštena, npr. nakon roka */
+.note {
+  margin: 16px 0;
+  padding: 10px 12px;
+  border-left: 4px solid var(--ink);
+  background: var(--tint);
+}
+
 /* ---------- Stanja prikaza ---------- */
 /* Učitavanje, neuspjeh i prazan popis: poruka na mjestu na kojem bi bio sadržaj */
 .state {

@@ -1,0 +1,3 @@
+# Skripte ljuske izvodi bash i na Windowsu (Git Bash) i u kontejneru. S krajem retka CRLF
+# svaka naredba na kraju dobiva znak CR i ljuska je ne prepoznaje.
+*.sh text eol=lf

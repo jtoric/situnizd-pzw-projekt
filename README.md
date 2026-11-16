@@ -123,6 +123,18 @@ Tokeni su u `localStorage`, pod ključevima `plreg.access_token` i `plreg.refres
 | popis natjecanja, jedno natjecanje, prijave | komponenta, `useRequest` | treba ga samo jedan prikaz |
 | vrijednosti obrasca i pogreške uz polja | komponenta | žive dok je obrazac otvoren |
 
+### Sučelje organizatora
+
+- natjecanja se dodaju i mijenjaju pod `/admin/natjecanja`; rokovi se upisuju po zagrebačkom
+  vremenu, a `lib/datetime.ts` im dodaje pomak zone (`+01:00` zimi, `+02:00` ljeti), bez kojega
+  ih API odbija
+- tablica prijava na stranici natjecanja ima filtar po stanju i stranice u adresi
+  (`?stanje=withdrawn&stranica=2`); pretraga i razvrstavanje rade nad prikazanom stranicom,
+  a izvoz u CSV dohvaća cijeli popis
+- koje radnje nad prijavama sučelje nudi, određuje razdoblje natjecanja (`lib/phase.ts`, ista
+  matrica kao pod *Faze natjecanja*); radnja koja više nije dopuštena ostaje vidljiva i
+  onemogućena, uz razlog
+
 Prikaz koji nešto dohvaća razlikuje četiri stanja: prvi dohvat traje, prvi dohvat nije
 uspio (s gumbom *Pokušaj ponovno*), popis je prazan i popis ima zapise. Obrazac provjerava
 podatke prije slanja (`lib/validation.ts`, ista pravila kao sheme na backendu), a odgovor
@@ -308,6 +320,7 @@ Stanje projekta na kraju svakog predavanja označeno je tagom:
 | `predavanje-07` | Arhitektura jednostranične aplikacije |
 | `predavanje-08` | Komunikacija s API-jem i prijava korisnika |
 | `predavanje-09` | Upravljanje stanjem i stanja sučelja |
+| `predavanje-10` | Tablice, filtri i administratorsko sučelje |
 
 ```bash
 git log --oneline predavanje-02..predavanje-03    # commitovi jednog predavanja

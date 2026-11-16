@@ -18,7 +18,15 @@ api/                 # backend: FastAPI
     services/        # poslovna pravila
     repositories/    # upiti nad bazom
     models/          # SQLAlchemy modeli
-web/                 # frontend: Vue, dolazi u 2. dijelu
+web/                 # frontend: Vue 3, TypeScript, Vite
+  src/
+    main.ts          # sastavljanje aplikacije
+    App.vue          # okvir: navigacija i mjesto za prikaz rute
+    router/          # popis ruta
+    views/           # stranice, jedna po ruti
+    components/      # dijelovi prikaza koje dijeli više stranica
+    api/             # oblici podataka i pozivi prema backendu
+    assets/          # zajednički stilovi
 docker-compose.yml   # baza podataka
 .env.example         # predložak konfiguracije
 ```
@@ -29,6 +37,7 @@ docker-compose.yml   # baza podataka
 - Python 3.11 ili noviji
 - [uv](https://docs.astral.sh/uv/)
 - Docker Desktop s alatom Docker Compose
+- Node.js 22.12 ili noviji (frontend)
 
 ## Pokretanje
 
@@ -53,6 +62,36 @@ Provjera:
 
 - http://127.0.0.1:8000/health vraća `{"status": "ok"}`
 - http://127.0.0.1:8000/docs prikazuje Swagger UI s popisom ruta
+
+### Frontend
+
+U drugom terminalu, uz pokrenut backend:
+
+```bash
+cd web
+npm install                   # pakete iz package.json, prvi put i nakon promjene popisa
+npm run dev                   # razvojni poslužitelj na http://127.0.0.1:5173
+```
+
+| Naredba | Što radi |
+|---------|----------|
+| `npm run dev` | razvojni poslužitelj; promijenjenu datoteku mijenja bez ponovnog učitavanja |
+| `npm run type-check` | provjera tipova u cijelom projektu, uključujući datoteke `.vue` |
+| `npm run build` | provjera tipova i izgradnja u mapu `dist/` |
+| `npm run preview` | poslužuje izgrađenu mapu `dist/` |
+
+Dogovori u kodu frontenda:
+
+- stranica je u `views/` i završava s `View` (`LiftersView.vue`), dijeljeni dio prikaza je u
+  `components/` (`AppNav.vue`); imena datoteka komponenata počinju velikim slovom
+- adrese stranica su na hrvatskom (`/natjecanja`), a imena ruta, varijabli i funkcija na
+  engleskom, kao i na backendu; tekst koji korisnik vidi je na hrvatskom
+- oblik svakog odgovora API-ja opisan je jednom, u `api/types.ts`, istim imenima polja kao
+  sheme u `api/app/schemas`
+- boje i razmaci zadani su varijablama u `assets/main.css`; komponenta ih koristi kao
+  `var(--ink)`, a vlastite stilove drži u `<style scoped>`
+- linter nije postavljen; vrata kvalitete su provjera tipova, koju `npm run build` pokreće prije
+  izgradnje, pa kod s pogreškom u tipovima ne može biti izgrađen
 
 ## Baza podataka
 
@@ -232,6 +271,7 @@ Stanje projekta na kraju svakog predavanja označeno je tagom:
 | `predavanje-04` | Autorizacija i vlasništvo nad zapisom |
 | `predavanje-05` | Oblikovanje API-ja i CRUD domene |
 | `predavanje-06` | Poslovna pravila i rokovi |
+| `predavanje-07` | Arhitektura jednostranične aplikacije |
 
 ```bash
 git log --oneline predavanje-02..predavanje-03    # commitovi jednog predavanja

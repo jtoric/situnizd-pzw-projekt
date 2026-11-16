@@ -16,6 +16,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { fetchAllRegistrations, fetchRegistrations } from '@/api/registrations'
 import type { Competition, Registration, RegistrationStatus } from '@/api/types'
 import StatusBadge from '@/components/StatusBadge.vue'
+import TableScroll from '@/components/TableScroll.vue'
 import { useRequest } from '@/composables/useRequest'
 import { useStatusChange } from '@/composables/useStatusChange'
 import { categoryLabel } from '@/lib/categories'
@@ -152,7 +153,7 @@ async function exportCsv() {
   </p>
   <template v-else>
     <p v-if="!allowed.changeStatus" id="admin-change-reason" class="note">{{ REASONS.changeStatus }}</p>
-    <div class="table-wrap" :aria-busy="pending">
+    <TableScroll label="Prijave svih klubova" :aria-busy="pending">
       <table>
         <caption class="sr-only">Prijave, stranica {{ page }}</caption>
         <thead>
@@ -196,7 +197,7 @@ async function exportCsv() {
           </tr>
         </tbody>
       </table>
-    </div>
+    </TableScroll>
   </template>
 
   <!-- Gumb koji nema kamo voditi ostaje na mjestu, da se ostatak retka ne pomiče -->

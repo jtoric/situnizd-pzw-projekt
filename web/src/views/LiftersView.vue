@@ -5,6 +5,7 @@ import { ApiError } from '@/api/http'
 import { deleteLifter } from '@/api/lifters'
 import type { Lifter } from '@/api/types'
 import ConfirmDialog from '@/components/ConfirmDialog.vue'
+import TableScroll from '@/components/TableScroll.vue'
 import { formatDate, GENDER_LABELS } from '@/lib/format'
 import { useAuthStore } from '@/stores/auth'
 import { useLiftersStore } from '@/stores/lifters'
@@ -64,7 +65,7 @@ async function confirmDelete() {
     <p v-if="lifters.failed" class="form-error" role="alert">
       Popis se nije mogao osvježiti, pa možda nije najnoviji.
     </p>
-    <div class="table-wrap">
+    <TableScroll label="Natjecatelji kluba">
       <table>
         <thead>
           <tr>
@@ -90,7 +91,7 @@ async function confirmDelete() {
           </tr>
         </tbody>
       </table>
-    </div>
+    </TableScroll>
   </template>
 
   <ConfirmDialog

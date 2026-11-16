@@ -176,8 +176,11 @@ select[aria-invalid='true'] { border-color: var(--danger); border-width: 2px; }
 .state p:last-child { margin-bottom: 0; }
 
 /* ---------- Tablice ---------- */
-/* Okvir dopušta vodoravno pomicanje: na uskom zaslonu redak ostaje jedan redak */
+/* Okvir dopušta vodoravno pomicanje: na uskom zaslonu redak ostaje jedan redak.
+   position: relative drži unutar okvira i apsolutno postavljene elemente (.sr-only u gumbima
+   retka); bez toga izlaze iz okvira koji se pomiče i proširuju cijelu stranicu na mobitelu. */
 .table-wrap {
+  position: relative;
   overflow-x: auto;
   background: var(--surface);
   border: 1px solid var(--line);

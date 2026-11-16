@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 
 import { fetchCompetitions } from '@/api/competitions'
+import TableScroll from '@/components/TableScroll.vue'
 import { useRequest } from '@/composables/useRequest'
 import { formatDate, formatDateTime, PHASE_LABELS } from '@/lib/format'
 
@@ -24,7 +25,7 @@ onMounted(load)
     Još nema natjecanja.
     <RouterLink :to="{ name: 'admin-competition-new' }">Dodajte prvo.</RouterLink>
   </p>
-  <div v-else-if="competitions" class="table-wrap">
+  <TableScroll v-else-if="competitions" label="Natjecanja">
     <table>
       <thead>
         <tr>
@@ -53,5 +54,5 @@ onMounted(load)
         </tr>
       </tbody>
     </table>
-  </div>
+  </TableScroll>
 </template>

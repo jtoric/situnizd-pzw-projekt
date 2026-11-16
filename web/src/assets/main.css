@@ -140,6 +140,12 @@ select {
   color: var(--text);
   font: inherit;
 }
+/* Neispravno polje: obrub i poruka ispod njega; boja nije jedini znak, poruka je tekst */
+input[aria-invalid='true'],
+select[aria-invalid='true'] { border-color: var(--danger); border-width: 2px; }
+.field-error { margin: 0; color: var(--danger); font-size: 14px; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
 /* Pogreška u obrascu: iznad gumba, za cijeli obrazac */
 .form-error {
   margin: 0 0 16px;
@@ -148,3 +154,30 @@ select {
   background: var(--danger-soft);
   color: var(--danger);
 }
+
+/* ---------- Stanja prikaza ---------- */
+/* Učitavanje, neuspjeh i prazan popis: poruka na mjestu na kojem bi bio sadržaj */
+.state {
+  padding: 24px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+}
+.state p { margin: 0 0 12px; }
+.state p:last-child { margin-bottom: 0; }
+
+/* ---------- Tablice ---------- */
+/* Okvir dopušta vodoravno pomicanje: na uskom zaslonu redak ostaje jedan redak */
+.table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 14px; color: var(--muted); font-weight: 600; background: var(--tint); }
+tbody tr:last-child td { border-bottom: 0; }
+td.actions { text-align: right; }
+.btn-small { min-height: 32px; padding: 4px 12px; font-size: 14px; }

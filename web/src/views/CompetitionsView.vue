@@ -1,21 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 
 import { fetchCompetitions } from '@/api/competitions'
-import type { Competition } from '@/api/types'
+import { useRequest } from '@/composables/useRequest'
+import { formatDate, formatDateTime, PHASE_LABELS } from '@/lib/format'
 
-const competitions = ref<Competition[]>([])
-const loading = ref(false)
-
-// await zaustavlja samo ovu funkciju; prikaz se za to vrijeme iscrtava i odgovara na klikove
-async function load() {
-  loading.value = true
-  try {
-    competitions.value = await fetchCompetitions()
-  } finally {
-    loading.value = false
-  }
-}
+// Popis treba samo ovaj prikaz, pa stanje ostaje u komponenti, a ne u pohrani
+const { data: competitions, pending, error, run: load } = useRequest(fetchCompetitions)
 
 onMounted(load)
 </script>
@@ -24,18 +15,39 @@ onMounted(load)
   <div class="page-header">
     <h1>Natjecanja</h1>
   </div>
-  <p class="lead">Natjecanja na koja klub prijavljuje natjecatelje, s rokovima prijave.</p>
-  <p v-if="loading">Učitavanje…</p>
-  <ul v-else class="list">
-    <li v-for="c in competitions" :key="c.id">
-      <RouterLink :to="{ name: 'competition', params: { compId: c.id } }">{{ c.name }}</RouterLink>
-      <span class="meta">{{ c.location }}, {{ c.date }}</span>
-    </li>
-  </ul>
-</template>
 
-<style scoped>
-.list { padding: 0; list-style: none; display: grid; gap: 8px; }
-.list li { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 12px 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
-.meta { color: var(--muted); }
-</style>
+  <p v-if="!competitions && pending" class="state" aria-busy="true">Učitavanje natjecanja…</p>
+  <div v-else-if="!competitions && error" class="state" role="alert">
+    <p>Natjecanja se trenutno ne mogu učitati. {{ error.message }}</p>
+    <button class="btn btn-secondary" type="button" @click="load">Pokušaj ponovno</button>
+  </div>
+  <p v-else-if="competitions && competitions.length === 0" class="state">
+    Još nema objavljenih natjecanja.
+  </p>
+  <div v-else-if="competitions" class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Natjecanje</th>
+          <th scope="col">Mjesto</th>
+          <th scope="col">Datum</th>
+          <th scope="col">Preliminarni rok</th>
+          <th scope="col">Konačni rok</th>
+          <th scope="col">Razdoblje</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="c in competitions" :key="c.id">
+          <td>
+            <RouterLink :to="{ name: 'competition', params: { compId: c.id } }">{{ c.name }}</RouterLink>
+          </td>
+          <td>{{ c.location }}</td>
+          <td>{{ formatDate(c.date) }}</td>
+          <td>{{ formatDateTime(c.prelim_deadline) }}</td>
+          <td>{{ formatDateTime(c.final_deadline) }}</td>
+          <td>{{ PHASE_LABELS[c.phase] }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>

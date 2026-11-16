@@ -1,0 +1,9 @@
+# U sliku ulazi samo ono što aplikacija treba za rad (Dockerfile kopira alembic i app)
+.venv/
+__pycache__/
+*.py[cod]
+tests/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/

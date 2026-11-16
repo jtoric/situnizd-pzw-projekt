@@ -1,0 +1,63 @@
+# Cijela aplikacija u produkcijskom obliku: baza, backend i nginx s izgrađenim frontendom.
+#
+#   cp .env.prod.example .env.prod           # i upisati vlastite tajne
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Aplikacija je tada na http://127.0.0.1:8080 (WEB_PORT). Isto pokreće CI za testove kroz
+# preglednik, pa se produkcija može isprobati i na vlastitom računalu. Razvoj i dalje koristi
+# docker-compose.yml, koji pokreće samo bazu.
+
+# Vlastito ime projekta: volumen s podatcima je plreg-prod_pgdata, odvojen od razvojnog
+name: plreg-prod
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: pl_reg
+      POSTGRES_USER: pl_user
+      # :? zaustavlja pokretanje s porukom kad varijabla nije zadana, umjesto da baza krene
+      # s praznom lozinkom
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?postavite DB_PASSWORD u .env.prod}
+    # Bez "ports": baza je dostupna samo servisima na unutarnjoj mreži Composea, ne i izvana
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pl_user -d pl_reg"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    environment:
+      ENV: prod
+      # "db" je ime servisa iznad; Compose ga razrješava u adresu kontejnera
+      DATABASE_URL: postgresql+asyncpg://pl_user:${DB_PASSWORD}@db:5432/pl_reg
+      JWT_SECRET: ${JWT_SECRET:?postavite JWT_SECRET u .env.prod}
+      JWT_ISSUER: sit-unizd
+    depends_on:
+      db:
+        condition: service_healthy
+    # Zdrav je tek kad /health/ odgovori, a on provjerava i bazu (app/routers/health.py)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/')"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    # nginx kreće tek kad backend odgovara, pa prvi zahtjevi ne dobivaju 502
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

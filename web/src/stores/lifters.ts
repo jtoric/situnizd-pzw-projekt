@@ -53,5 +53,10 @@ export const useLiftersStore = defineStore('lifters', () => {
     else items.value[index] = lifter
   }
 
-  return { items, loaded, pending, failed, byId, load, ensureLoaded, upsert }
+  /** Uklanja natjecatelja kojeg je poslužitelj obrisao. */
+  function remove(id: number) {
+    items.value = items.value.filter((l) => l.id !== id)
+  }
+
+  return { items, loaded, pending, failed, byId, load, ensureLoaded, upsert, remove }
 })

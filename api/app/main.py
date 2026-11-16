@@ -19,8 +19,15 @@ from app.routers.registrations import router as registrations_router
 
 
 def create_app(config: Settings = settings) -> FastAPI:
-    setup_logging(debug=config.ENV == "dev")
-    app = FastAPI(title=config.APP_NAME, debug=config.ENV == "dev")
+    setup_logging(debug=config.is_dev)
+    app = FastAPI(
+        title=config.APP_NAME,
+        debug=config.is_dev,
+        # Opis API-ja i Swagger samo u razvoju: u produkciji ga klijent ne treba, a
+        # popis svih ruta s primjerima tijela olakšava posao onome tko traži slabo
+        # mjesto
+        openapi_url="/openapi.json" if config.is_dev else None,
+    )
 
     app.add_exception_handler(AppError, app_error_handler)
     app.add_exception_handler(RequestValidationError, validation_error_handler)

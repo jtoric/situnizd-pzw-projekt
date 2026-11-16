@@ -9,6 +9,8 @@
 import { nextTick } from 'vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
+import type { Role } from '@/api/types'
+import { useAuthStore } from '@/stores/auth'
 import CompetitionsView from '@/views/CompetitionsView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 
@@ -18,6 +20,10 @@ declare module 'vue-router' {
   interface RouteMeta {
     /** naslov kartice preglednika, uz ime aplikacije */
     title?: string
+    /** ruta se otvara i bez prijave */
+    public?: boolean
+    /** ruta je samo za tu ulogu; dijete nasljeđuje vrijednost roditelja */
+    role?: Role
   }
 }
 
@@ -27,7 +33,7 @@ const routes: RouteRecordRaw[] = [
     path: '/prijava',
     name: 'login',
     component: () => import('@/views/LoginView.vue'),
-    meta: { title: 'Prijava' },
+    meta: { title: 'Prijava', public: true },
   },
   // Početni prikaz je u datoteci koja se preuzima pri pokretanju; ostali se preuzimaju tek pri
   // prvom odlasku na rutu (() => import(...)), pa prvo učitavanje ne nosi kod koji možda ne treba
@@ -48,12 +54,15 @@ const routes: RouteRecordRaw[] = [
     path: '/natjecatelji',
     name: 'lifters',
     component: () => import('@/views/LiftersView.vue'),
-    meta: { title: 'Natjecatelji' },
+    // Natjecatelji pripadaju klubu; organizator nema svoj klub
+    meta: { title: 'Natjecatelji', role: 'club' },
   },
   {
     // Ugniježđene rute dijele okvir AdminLayout; dijete se prikazuje u njegovu RouterView
     path: '/admin',
     component: () => import('@/views/admin/AdminLayout.vue'),
+    // meta roditelja vrijedi za svako dijete, pa se uvjet piše jednom
+    meta: { role: 'admin' },
     children: [
       { path: '', redirect: { name: 'admin-competitions' } },
       {
@@ -75,7 +84,7 @@ const routes: RouteRecordRaw[] = [
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: NotFoundView,
-    meta: { title: 'Stranica nije pronađena' },
+    meta: { title: 'Stranica nije pronađena', public: true },
   },
 ]
 
@@ -84,6 +93,23 @@ const router = createRouter({
   // nepoznatu adresu mora vratiti index.html (vite to radi sam, nginx po postavci)
   history: createWebHistory(),
   routes,
+})
+
+// Provjera prije svake navigacije. Postoji radi korisnika, da ne otvori prikaz čiji bi svaki
+// zahtjev poslužitelj odbio; podatke štiti poslužitelj, koji svaki zahtjev provjerava sam.
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
+  // Nakon osvježavanja stranice korisnik se tek dohvaća; prva navigacija čeka ishod
+  await auth.restore()
+
+  if (to.meta.public) {
+    // Prijavljeni korisnik na obrascu za prijavu nema što raditi
+    if (to.name === 'login' && auth.isLoggedIn) return { name: 'competitions' }
+    return true
+  }
+  if (!auth.isLoggedIn) return { name: 'login', query: { redirect: to.fullPath } }
+  if (to.meta.role && to.meta.role !== auth.user?.role) return { name: 'competitions' }
+  return true
 })
 
 // Jednostranična aplikacija ne učitava novu stranicu, pa preglednik sam ne mijenja naslov kartice

@@ -1,0 +1,13 @@
+// Kod koji se izvodi u pregledniku: src/ i datoteke .vue
+{
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+  "compilerOptions": {
+    // Indeksiranje polja i objekta vraća T | undefined, pa izostali zapis ne prolazi neprimijećen
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
+  }
+}

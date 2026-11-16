@@ -1,7 +1,7 @@
 // Konfiguracije alata koje se izvode u Nodeu, ne u pregledniku
 {
   "extends": "@tsconfig/node24/tsconfig.json",
-  "include": ["vite.config.*"],
+  "include": ["vite.config.*", "vitest.config.*"],
   "compilerOptions": {
     "module": "preserve",
     "moduleResolution": "bundler",

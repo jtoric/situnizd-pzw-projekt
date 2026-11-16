@@ -424,7 +424,7 @@ Stanje projekta na kraju svakog predavanja označeno je tagom:
 | `predavanje-07` | Arhitektura jednostranične aplikacije |
 | `predavanje-08` | Komunikacija s API-jem i prijava korisnika |
 | `predavanje-09` | Upravljanje stanjem i stanja sučelja |
-| `predavanje-10` | Tablice, filtri i administratorsko sučelje |
+| `predavanje-10` | Tablice, filtri i radnje organizatora |
 | `predavanje-11` | Testiranje cjelovite aplikacije |
 | `predavanje-12` | Produkcijska izgradnja i postavljanje |
 

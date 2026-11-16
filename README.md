@@ -30,8 +30,12 @@ web/                 # frontend: Vue 3, TypeScript, Vite
     composables/     # logika koju dijeli više komponenata (useRequest)
     lib/             # čiste funkcije bez Vuea: provjera obrasca, oblikovanje, kategorije
     assets/          # zajednički stilovi
-docker-compose.yml   # baza podataka
-.env.example         # predložak konfiguracije
+docker-compose.yml   # baza za razvoj
+docker-compose.prod.yml  # cijela aplikacija kao u produkciji: baza, backend, nginx
+.env.example         # predložak konfiguracije za razvoj
+.env.prod.example    # predložak tajni za produkciju
+scripts/backup.sh    # kopija baze s provjerom vraćanja
+.github/workflows/   # CI: testovi na svaki push i pull request
 ```
 
 ## Preduvjeti
@@ -82,6 +86,8 @@ npm run dev                   # razvojni poslužitelj na http://127.0.0.1:5173
 | `npm run type-check` | provjera tipova u cijelom projektu, uključujući datoteke `.vue` |
 | `npm run build` | provjera tipova i izgradnja u mapu `dist/` |
 | `npm run preview` | poslužuje izgrađenu mapu `dist/` |
+| `npm test` | jedinični testovi (Vitest) |
+| `npm run test:e2e` | testovi kroz preglednik (Playwright) |
 
 Dogovori u kodu frontenda:
 
@@ -337,6 +343,72 @@ popisom polja koja nisu prošla provjeru.
 | `invalid_category` | 400 | kategorija ne odgovara spolu natjecatelja |
 | `invalid_deadlines` | 400 | izmjena bi poremetila poredak rokova |
 
+## Produkcija
+
+Produkcija je ista aplikacija u trima kontejnerima (`docker-compose.prod.yml`):
+
+| Servis | Slika | Uloga |
+|--------|-------|-------|
+| `db` | `postgres:16` | baza; bez objavljenog porta, dostupna samo backendu |
+| `api` | `api/Dockerfile` | `alembic upgrade head`, pa `uvicorn`; proces radi kao `appuser`, ne kao root |
+| `web` | `web/Dockerfile` | izgradnja frontenda u Nodeu, pa nginx s izgrađenim datotekama |
+
+nginx (`web/nginx.conf`) poslužuje aplikaciju, prosljeđuje `/api/` backendu (stranica i API
+dijele izvor, pa CORS nije potreban), za svaku nepoznatu putanju vraća `index.html`, šalje
+sigurnosna zaglavlja (CSP, `nosniff`, `Referrer-Policy`) i ograničava broj pokušaja prijave.
+
+### Pokretanje
+
+```bash
+cp .env.prod.example .env.prod      # upisati DB_PASSWORD i JWT_SECRET: openssl rand -hex 32
+docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
+Aplikacija je na <http://127.0.0.1:8080>. Prvi račun organizatora (početni podatci iz
+`app.seed` u produkciju ne idu, jer su im lozinke javne):
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.prod exec -e ADMIN_USERNAME=organizator@savez.hr -e ADMIN_PASSWORD='...' api python -m app.create_admin
+```
+
+### Razlike prema razvoju
+
+| | Razvoj | Produkcija |
+|---|---|---|
+| `ENV` | `dev` | `prod` |
+| `JWT_SECRET` | iz `.env.example`, javan | tajan, barem 32 znaka; s javnim backend ne kreće |
+| Swagger (`/docs`) | uključen | isključen |
+| frontend | Vite, izvorni moduli | izgrađene datoteke iz `dist/` |
+| proxy za `/api` | Vite (`vite.config.ts`) | nginx (`web/nginx.conf`) |
+| baza | port 5432 otvoren na računalu | samo na unutarnjoj mreži |
+| početni podatci | `python -m app.seed` | samo organizator, `python -m app.create_admin` |
+
+### Kopija baze
+
+```bash
+bash scripts/backup.sh
+```
+
+Kopija ide u `backups/` i odmah se vraća u privremenu bazu, da se zna da se može vratiti.
+Na poslužitelju se naredba pokreće po rasporedu (npr. `cron` svaku noć), a kopije se drže
+i izvan poslužitelja.
+
+### Nadzor
+
+`GET /api/health/` vraća `{"status": "ok"}` kad backend radi i baza odgovara, a `503` kad
+baza ne odgovara. Isti zahtjev koristi Docker (`healthcheck`), pa nginx kreće tek kad je
+backend zdrav. Zapisi: `docker compose -f docker-compose.prod.yml --env-file .env.prod logs api`.
+
+### Provjera prije predaje
+
+- [ ] `pytest --cov` u `api/` prolazi; `ruff check .` i `ruff format --check .` su čisti
+- [ ] `npm run build` i `npm test` u `web/` prolaze
+- [ ] produkcijski stog se diže iz čistog stanja, a `npm run test:e2e` uz
+      `E2E_URL=http://127.0.0.1:8080` prolazi (isto radi CI)
+- [ ] `.env` i `.env.prod` nisu u gitu (`git status --ignored`), a tajne nisu ni u jednom commitu
+- [ ] u pregledniku na 390 px nema vodoravnog pomicanja ni pogrešaka u konzoli
+- [ ] `bash scripts/backup.sh` završava porukom o vraćenoj kopiji
+
 ## Tagovi predavanja
 
 Stanje projekta na kraju svakog predavanja označeno je tagom:
@@ -354,6 +426,7 @@ Stanje projekta na kraju svakog predavanja označeno je tagom:
 | `predavanje-09` | Upravljanje stanjem i stanja sučelja |
 | `predavanje-10` | Tablice, filtri i administratorsko sučelje |
 | `predavanje-11` | Testiranje cjelovite aplikacije |
+| `predavanje-12` | Produkcijska izgradnja i postavljanje |
 
 ```bash
 git log --oneline predavanje-02..predavanje-03    # commitovi jednog predavanja

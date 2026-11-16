@@ -8,7 +8,9 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "build-only": "vite build",
     "preview": "vite preview",
-    "type-check": "vue-tsc --build"
+    "type-check": "vue-tsc --build",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "pinia": "^3.0.4",
@@ -16,6 +18,8 @@
     "vue-router": "^5.0.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.1",
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "^24.12.0",
     "@vitejs/plugin-vue": "^6.0.5",
@@ -23,6 +27,7 @@
     "npm-run-all2": "^8.0.4",
     "typescript": "~6.0.0",
     "vite": "^8.0.16",
+    "vitest": "^4.1.12",
     "vue-tsc": "^3.2.6"
   },
   "engines": {

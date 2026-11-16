@@ -24,3 +24,15 @@ pythonpath = ["."]
 # async def testovi i fixtureovi rade bez posebne oznake
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+source = ["app"]
+# SQLAlchemy u asinkronom radu izvodi kod nakon await unutar greenleta. Bez ove postavke
+# coverage te retke ne vidi i prijavljuje ih kao neizvedene, iako su ih testovi prošli.
+concurrency = ["greenlet", "thread"]
+# Početni podatci su razvojni alat, a ne dio aplikacije koju testovi provjeravaju
+omit = ["app/seed.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

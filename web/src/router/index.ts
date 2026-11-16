@@ -58,6 +58,19 @@ const routes: RouteRecordRaw[] = [
     meta: { title: 'Natjecatelji', role: 'club' },
   },
   {
+    path: '/natjecatelji/novi',
+    name: 'lifter-new',
+    component: () => import('@/views/LifterFormView.vue'),
+    meta: { title: 'Dodavanje natjecatelja', role: 'club' },
+  },
+  {
+    // Isti pogled kao za novog natjecatelja; parametar odlučuje dodaje li se ili uređuje
+    path: '/natjecatelji/:lifterId(\\d+)',
+    name: 'lifter-edit',
+    component: () => import('@/views/LifterFormView.vue'),
+    meta: { title: 'Uređivanje natjecatelja', role: 'club' },
+  },
+  {
     // Ugniježđene rute dijele okvir AdminLayout; dijete se prikazuje u njegovu RouterView
     path: '/admin',
     component: () => import('@/views/admin/AdminLayout.vue'),

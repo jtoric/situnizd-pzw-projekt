@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppNav from '@/components/AppNav.vue'
+import NotificationList from '@/components/NotificationList.vue'
 </script>
 
 <template>
@@ -9,4 +10,5 @@ import AppNav from '@/components/AppNav.vue'
   <main id="main" class="container" tabindex="-1">
     <RouterView />
   </main>
+  <NotificationList />
 </template>

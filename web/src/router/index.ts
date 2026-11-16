@@ -85,6 +85,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Administracija natjecanja' },
       },
       {
+        path: 'natjecanja/novo',
+        name: 'admin-competition-new',
+        component: () => import('@/views/admin/CompetitionFormView.vue'),
+        meta: { title: 'Dodavanje natjecanja' },
+      },
+      {
+        path: 'natjecanja/:compId(\\d+)',
+        name: 'admin-competition-edit',
+        component: () => import('@/views/admin/CompetitionFormView.vue'),
+        meta: { title: 'Uređivanje natjecanja' },
+      },
+      {
         path: 'klubovi',
         name: 'admin-clubs',
         component: () => import('@/views/admin/AdminClubsView.vue'),

@@ -198,6 +198,38 @@ Testovi rade nad zasebnom bazom `pl_reg_test` na istom poslužitelju; stvara se
 sama pri prvom pokretanju, a tablice se prazne prije svakog testa. Drugu bazu
 moguće je zadati varijablom `TEST_DATABASE_URL`.
 
+Pokrivenost (koje retke aplikacije nijedan test nije izveo):
+
+```bash
+pytest --cov
+```
+
+Postavke su u `api/pyproject.toml`. `concurrency = ["greenlet", "thread"]` je nužan:
+SQLAlchemy u asinkronom radu izvodi kod nakon `await` u greenletima, pa ga coverage bez
+te postavke ne vidi i servise prijavljuje kao napola netestirane.
+
+### Frontend
+
+```bash
+cd web
+npm test                      # Vitest: lib/, pohrane i HTTP sloj, bez preglednika i poslužitelja
+npm run test:e2e              # Playwright: cijela aplikacija u pregledniku, s provjerom axe
+```
+
+| Razina | Gdje | Što provjerava |
+|--------|------|----------------|
+| jedinični | `src/**/__tests__/*.test.ts` | čiste funkcije (`lib/`), pohranu s lažnim API-jem, obnovu tokena s lažnim `fetch` |
+| kroz preglednik | `e2e/*.spec.ts` | prijavu, prijavu natjecatelja, radnje po razdoblju, pristupačnost (WCAG 2.2 A i AA) i širinu stranice, na računalu i mobitelu |
+
+Vitest radi u zoni `America/Los_Angeles` (`vitest.config.ts`), da oblikovanje datuma i
+rokova mora dati zagrebački dan i sat bez obzira na zonu računala. Test
+`categories.test.ts` čita `api/app/schemas/registration.py` i pada kad se popisi kategorija
+na dvije strane razlikuju.
+
+Testovi kroz preglednik traže pokrenut backend s početnim podatcima; razvojni poslužitelj
+Playwright pokreće sam. Prvi put: `npx playwright install chromium`. Podatke koje test
+treba (natjecanje, natjecatelj) stvara sam, preko API-ja i s jedinstvenim imenom.
+
 ## Kvaliteta koda
 
 ```bash
@@ -321,6 +353,7 @@ Stanje projekta na kraju svakog predavanja označeno je tagom:
 | `predavanje-08` | Komunikacija s API-jem i prijava korisnika |
 | `predavanje-09` | Upravljanje stanjem i stanja sučelja |
 | `predavanje-10` | Tablice, filtri i administratorsko sučelje |
+| `predavanje-11` | Testiranje cjelovite aplikacije |
 
 ```bash
 git log --oneline predavanje-02..predavanje-03    # commitovi jednog predavanja

@@ -26,8 +26,9 @@ web/                 # frontend: Vue 3, TypeScript, Vite
     views/           # stranice, jedna po ruti
     components/      # dijelovi prikaza koje dijeli više stranica
     api/             # oblici podataka i pozivi prema backendu
-    stores/          # stanje koje dijeli više prikaza (prijava, obavijesti)
-    lib/             # čiste funkcije bez Vuea
+    stores/          # stanje koje dijeli više prikaza (prijava, natjecatelji, obavijesti)
+    composables/     # logika koju dijeli više komponenata (useRequest)
+    lib/             # čiste funkcije bez Vuea: provjera obrasca, oblikovanje, kategorije
     assets/          # zajednički stilovi
 docker-compose.yml   # baza podataka
 .env.example         # predložak konfiguracije
@@ -112,6 +113,20 @@ Klub otvori `/natjecanja`:
    hvata samo ono na što reagira posebno, a ostalo kao obavijest prikazuje `main.ts`.
 
 Tokeni su u `localStorage`, pod ključevima `plreg.access_token` i `plreg.refresh_token`.
+
+### Gdje stoji stanje
+
+| Podatak | Mjesto | Zašto |
+|---------|--------|-------|
+| prijavljeni korisnik | `stores/auth.ts` | čitaju ga navigacija, router i gotovo svaki prikaz |
+| natjecatelji kluba | `stores/lifters.ts` | dijele ga popis natjecatelja i obrazac prijave |
+| popis natjecanja, jedno natjecanje, prijave | komponenta, `useRequest` | treba ga samo jedan prikaz |
+| vrijednosti obrasca i pogreške uz polja | komponenta | žive dok je obrazac otvoren |
+
+Prikaz koji nešto dohvaća razlikuje četiri stanja: prvi dohvat traje, prvi dohvat nije
+uspio (s gumbom *Pokušaj ponovno*), popis je prazan i popis ima zapise. Obrazac provjerava
+podatke prije slanja (`lib/validation.ts`, ista pravila kao sheme na backendu), a odgovor
+`422` prikazuje uz polja na isti način (`lib/errors.ts`).
 
 ## Baza podataka
 
@@ -292,6 +307,7 @@ Stanje projekta na kraju svakog predavanja označeno je tagom:
 | `predavanje-06` | Poslovna pravila i rokovi |
 | `predavanje-07` | Arhitektura jednostranične aplikacije |
 | `predavanje-08` | Komunikacija s API-jem i prijava korisnika |
+| `predavanje-09` | Upravljanje stanjem i stanja sučelja |
 
 ```bash
 git log --oneline predavanje-02..predavanje-03    # commitovi jednog predavanja

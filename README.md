@@ -26,6 +26,8 @@ web/                 # frontend: Vue 3, TypeScript, Vite
     views/           # stranice, jedna po ruti
     components/      # dijelovi prikaza koje dijeli više stranica
     api/             # oblici podataka i pozivi prema backendu
+    stores/          # stanje koje dijeli više prikaza (prijava, obavijesti)
+    lib/             # čiste funkcije bez Vuea
     assets/          # zajednički stilovi
 docker-compose.yml   # baza podataka
 .env.example         # predložak konfiguracije
@@ -92,6 +94,24 @@ Dogovori u kodu frontenda:
   `var(--ink)`, a vlastite stilove drži u `<style scoped>`
 - linter nije postavljen; vrata kvalitete su provjera tipova, koju `npm run build` pokreće prije
   izgradnje, pa kod s pogreškom u tipovima ne može biti izgrađen
+
+### Put jednog zahtjeva u frontendu
+
+Klub otvori `/natjecanja`:
+
+1. `router/index.ts`, provjera prije navigacije: nakon osvježavanja stranice čeka
+   `stores/auth.ts` (`restore`, `GET /auth/me`), pa neprijavljenog korisnika šalje na
+   `/prijava?redirect=/natjecanja`, a korisnika krive uloge na popis natjecanja.
+2. `views/CompetitionsView.vue` poziva `fetchCompetitions()` iz `api/competitions.ts`.
+3. `api/http.ts` dodaje token iz `api/tokens.ts` i šalje `GET /api/competitions/?limit=100`.
+4. Vite (`vite.config.ts`) zahtjev prosljeđuje backendu kao `GET /competitions/`. Stranica i
+   API tako dijele izvor, pa backend ne treba dopuštenje CORS.
+5. Na `401` `api/http.ts` jednom traži novi par tokena (`POST /auth/refresh`) i ponavlja
+   zahtjev; ako ni to ne uspije, `main.ts` korisnika šalje na prijavu.
+6. Svaki drugi neuspjeh postaje `ApiError` s poljima `status`, `code` i `message`. Prikaz
+   hvata samo ono na što reagira posebno, a ostalo kao obavijest prikazuje `main.ts`.
+
+Tokeni su u `localStorage`, pod ključevima `plreg.access_token` i `plreg.refresh_token`.
 
 ## Baza podataka
 
@@ -272,6 +292,7 @@ Stanje projekta na kraju svakog predavanja označeno je tagom:
 | `predavanje-05` | Oblikovanje API-ja i CRUD domene |
 | `predavanje-06` | Poslovna pravila i rokovi |
 | `predavanje-07` | Arhitektura jednostranične aplikacije |
+| `predavanje-08` | Komunikacija s API-jem i prijava korisnika |
 
 ```bash
 git log --oneline predavanje-02..predavanje-03    # commitovi jednog predavanja

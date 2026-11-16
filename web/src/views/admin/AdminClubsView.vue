@@ -5,6 +5,7 @@ import { onMounted, reactive, ref } from 'vue'
 import { createClub, fetchClubs, type ClubInput } from '@/api/clubs'
 import { ApiError } from '@/api/http'
 import FormField from '@/components/FormField.vue'
+import TableScroll from '@/components/TableScroll.vue'
 import { useRequest } from '@/composables/useRequest'
 import { toFieldErrors } from '@/lib/errors'
 import type { FieldErrors } from '@/lib/validation'
@@ -60,7 +61,7 @@ async function submit() {
     <button class="btn btn-secondary" type="button" @click="load">Pokušaj ponovno</button>
   </div>
   <p v-else-if="clubs?.length === 0" class="state">Još nema klubova.</p>
-  <div v-else-if="clubs" class="table-wrap">
+  <TableScroll v-else-if="clubs" label="Klubovi">
     <table>
       <thead>
         <tr><th scope="col">Klub</th><th scope="col">Grad</th></tr>
@@ -69,7 +70,7 @@ async function submit() {
         <tr v-for="c in clubs" :key="c.id"><td>{{ c.name }}</td><td>{{ c.city }}</td></tr>
       </tbody>
     </table>
-  </div>
+  </TableScroll>
 
   <form class="card form" novalidate @submit.prevent="submit">
     <h3>Novi klub</h3>

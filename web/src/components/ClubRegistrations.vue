@@ -11,6 +11,7 @@ import { fetchRegistrations } from '@/api/registrations'
 import type { Competition, Registration } from '@/api/types'
 import RegistrationForm from '@/components/RegistrationForm.vue'
 import StatusBadge from '@/components/StatusBadge.vue'
+import TableScroll from '@/components/TableScroll.vue'
 import { useRequest } from '@/composables/useRequest'
 import { useStatusChange } from '@/composables/useStatusChange'
 import { categoryLabel } from '@/lib/categories'
@@ -71,7 +72,7 @@ const { changeStatus } = useStatusChange({
   <p v-else-if="registrations?.length === 0" class="state">Klub još nema prijava na ovo natjecanje.</p>
   <template v-else-if="registrations">
     <p v-if="!allowed.changeStatus" id="change-reason" class="note">{{ REASONS.changeStatus }}</p>
-    <div class="table-wrap">
+    <TableScroll label="Prijave kluba">
       <table>
         <thead>
           <tr>
@@ -104,6 +105,6 @@ const { changeStatus } = useStatusChange({
           </tr>
         </tbody>
       </table>
-    </div>
+    </TableScroll>
   </template>
 </template>

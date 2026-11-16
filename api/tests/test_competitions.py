@@ -109,6 +109,18 @@ async def test_patch_prelim_after_existing_final_is_400(
     assert resp.json()["code"] == "invalid_deadlines"
 
 
+async def test_patch_final_on_competition_day_is_400(client, admin_user, competition):
+    headers = await auth_header(client, "testadmin", "admin123")
+    # Natjecanje je 16.05.2026.; konačni rok taj dan bio bi prekasno
+    resp = await client.patch(
+        f"/competitions/{competition.id}",
+        json={"final_deadline": "2026-05-16T10:00:00Z"},
+        headers=headers,
+    )
+    assert resp.status_code == 400
+    assert resp.json()["code"] == "invalid_deadlines"
+
+
 async def test_club_cannot_patch_competition(client, club_and_user, competition):
     headers = await auth_header(client, "testclub", "klub123")
     resp = await client.patch(

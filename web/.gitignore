@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.tsbuildinfo
+# Izvještaji i zapisi Playwrighta
+playwright-report/
+test-results/

@@ -1,0 +1,194 @@
+/*
+ * Zajednički stilovi cijele aplikacije; uvozi ih main.ts.
+ *
+ * Ovdje stoji samo ono što dijeli više komponenata: boje i razmaci kao varijable, osnovni
+ * izgled elemenata, raspored stranice, gumbi, obrasci i tablice. Sve što pripada jednoj
+ * komponenti ide u njezin <style scoped>.
+ *
+ * Boje se u komponentama koriste samo kroz varijable (var(--ink)), nikad kao heks vrijednost,
+ * pa se izgled mijenja na jednom mjestu. Omjeri kontrasta izmjereni su na bijeloj podlozi;
+ * WCAG 2.2 AA traži barem 4,5:1 za tekst.
+ */
+:root {
+  --ink: #0c4685;        /* glavna boja: poveznice, gumbi, naslovi; 9,4:1 */
+  --ink-hover: #08325f;
+  --tint: #eaeef6;       /* svijetla podloga istaknutih dijelova */
+  --text: #1a222e;       /* glavni tekst; 16,0:1 */
+  --muted: #5b6473;      /* sporedni tekst; 6,0:1 */
+  --line: #d9dee7;       /* tanke linije, okviri polja */
+  --bg: #f6f7f9;         /* podloga stranice */
+  --surface: #ffffff;    /* podloga kartica, tablica i obrazaca */
+  --danger: #b3261e;     /* pogreška, odjava; 6,5:1 */
+  --danger-soft: #fbeaea;
+  --success: #1e6b3a;    /* uspjeh, aktivna prijava; 6,5:1 */
+  --success-soft: #e6f3ea;
+  --focus: #1f6feb;      /* obrub fokusa s tipkovnice */
+
+  --radius: 6px;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--bg);
+}
+
+h1, h2, h3 { line-height: 1.25; color: var(--ink); }
+h1 { font-size: clamp(24px, 4vw, 30px); margin: 0 0 16px; }
+h2 { font-size: 20px; margin: 24px 0 12px; }
+
+a { color: var(--ink); }
+a:hover { color: var(--ink-hover); }
+
+/* Fokus s tipkovnice mora biti vidljiv (WCAG 2.4.7); :focus-visible ga ne crta pri kliku mišem */
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* main dobiva fokus nakon promjene rute (router/index.ts); obrub tada ne treba */
+main:focus { outline: none; }
+
+/* Poveznica za korisnike tipkovnice i čitača zaslona: vidljiva tek kad dobije fokus */
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -48px;
+  padding: 8px 12px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: var(--radius);
+  z-index: 10;
+}
+.skip-link:focus { top: 8px; }
+
+/* Tekst koji čita čitač zaslona, a na zaslonu ga nema */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Raspored ---------- */
+.container { max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; }
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+.page-header h1 { margin: 0; }
+
+.lead { color: var(--muted); margin: 0 0 16px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+/* ---------- Gumbi ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--ink);
+  color: #fff;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn:hover { background: var(--ink-hover); color: #fff; }
+.btn-secondary { background: var(--surface); color: var(--ink); }
+.btn-secondary:hover { background: var(--tint); color: var(--ink); }
+.btn-danger { background: var(--danger); border-color: var(--danger); }
+.btn-danger:hover { background: #8c1d17; }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px 40px; }
+}
+
+/* ---------- Obrasci ---------- */
+.field { display: grid; gap: 4px; margin-bottom: 16px; }
+.field label { font-weight: 600; }
+input,
+select {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+/* Neispravno polje: obrub i poruka ispod njega; boja nije jedini znak, poruka je tekst */
+input[aria-invalid='true'],
+select[aria-invalid='true'] { border-color: var(--danger); border-width: 2px; }
+.field-error { margin: 0; color: var(--danger); font-size: 14px; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+/* Pogreška u obrascu: iznad gumba, za cijeli obrazac */
+.form-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+/* Napomena uz radnju koja trenutno nije dopuštena, npr. nakon roka */
+.note {
+  margin: 16px 0;
+  padding: 10px 12px;
+  border-left: 4px solid var(--ink);
+  background: var(--tint);
+}
+
+/* ---------- Stanja prikaza ---------- */
+/* Učitavanje, neuspjeh i prazan popis: poruka na mjestu na kojem bi bio sadržaj */
+.state {
+  padding: 24px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--muted);
+}
+.state p { margin: 0 0 12px; }
+.state p:last-child { margin-bottom: 0; }
+
+/* ---------- Tablice ---------- */
+/* Okvir dopušta vodoravno pomicanje: na uskom zaslonu redak ostaje jedan redak.
+   position: relative drži unutar okvira i apsolutno postavljene elemente (.sr-only u gumbima
+   retka); bez toga izlaze iz okvira koji se pomiče i proširuju cijelu stranicu na mobitelu. */
+.table-wrap {
+  position: relative;
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 14px; color: var(--muted); font-weight: 600; background: var(--tint); }
+tbody tr:last-child td { border-bottom: 0; }
+td.actions { text-align: right; }
+.btn-small { min-height: 32px; padding: 4px 12px; font-size: 14px; }

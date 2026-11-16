@@ -21,5 +21,7 @@ ruff>=0.9
 pytest>=8.3
 pytest-asyncio>=0.25
 httpx>=0.28
+# Pokrivenost: koji retci aplikacije nijedan test nije izveo
+pytest-cov>=6.0
 # Zamrzavanje vremena za pravila koja ovise o roku
 freezegun>=1.5

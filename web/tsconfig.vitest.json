@@ -1,0 +1,11 @@
+// Testovi u src/**/__tests__ (Vitest). Izvode se u Nodeu, pa ih tsconfig.app.json ne uključuje,
+// ali ih npm run type-check i npm run build provjeravaju preko ove datoteke.
+{
+  "extends": "./tsconfig.app.json",
+  "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+  "exclude": [],
+  "compilerOptions": {
+    "types": ["node"],
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo"
+  }
+}

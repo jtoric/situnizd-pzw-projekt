@@ -19,3 +19,9 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Tajne produkcije (predložak je .env.prod.example)
+.env.prod
+
+# Kopije baze (scripts/backup.sh)
+backups/

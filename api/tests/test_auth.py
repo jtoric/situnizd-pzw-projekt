@@ -163,6 +163,20 @@ async def test_refresh_rejects_access_token(client, admin_user):
     assert resp.json()["code"] == "invalid_credentials"
 
 
+async def test_refresh_rejected_after_deactivation(client, db, admin_user):
+    tokens = (await login(client, "testadmin", "admin123")).json()
+    await db.execute(
+        update(User).where(User.id == admin_user.id).values(is_active=False)
+    )
+    await db.commit()
+    # Refresh token je potpisan i nije istekao; odbija ga zapis u bazi
+    resp = await client.post(
+        "/auth/refresh", json={"refresh_token": tokens["refresh_token"]}
+    )
+    assert resp.status_code == 401
+    assert resp.json()["code"] == "invalid_credentials"
+
+
 async def test_refresh_rejects_garbage(client):
     resp = await client.post("/auth/refresh", json={"refresh_token": "nije.jwt.token"})
     assert resp.status_code == 401
